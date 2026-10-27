@@ -105,64 +105,70 @@ export function System() {
           />
         </Panel>
         <Panel title="Ingest offsets" span={2}>
-          <table className="data">
-            <thead>
-              <tr>
-                <th>source</th>
-                <th>inode</th>
-                <th style={{ textAlign: "right" }}>offset</th>
-                <th>updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              {i.ingest_state.map((s) => (
-                <tr key={s.source}>
-                  <td>
-                    <code>{s.source}</code>
-                  </td>
-                  <td className="dim">{s.inode}</td>
-                  <td style={{ textAlign: "right" }}>{fmtBytes(s.offset)}</td>
-                  <td>{relative(s.updated_at, i.now)}</td>
-                </tr>
-              ))}
-              {!i.ingest_state.length && (
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="dim">
-                    no ingest state yet
-                  </td>
+                  <th>source</th>
+                  <th>inode</th>
+                  <th style={{ textAlign: "right" }}>offset</th>
+                  <th>updated</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {i.ingest_state.map((s) => (
+                  <tr key={s.source}>
+                    <td>
+                      <code>{s.source}</code>
+                    </td>
+                    <td className="dim">{s.inode}</td>
+                    <td style={{ textAlign: "right" }}>{fmtBytes(s.offset)}</td>
+                    <td>{relative(s.updated_at, i.now)}</td>
+                  </tr>
+                ))}
+                {!i.ingest_state.length && (
+                  <tr>
+                    <td colSpan={4} className="dim">
+                      no ingest state yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Panel>
         <Panel title="Measurement runs" span={2}>
-          <table className="data">
-            <thead>
-              <tr>
-                <th>completed</th>
-                <th>revision</th>
-                <th style={{ textAlign: "right" }}>matched</th>
-              </tr>
-            </thead>
-            <tbody>
-              {i.measurement_runs.map((r) => (
-                <tr key={r.completed_at}>
-                  <td>{fmtTime(r.completed_at)}</td>
-                  <td>
-                    <code>{r.revision}</code>
-                  </td>
-                  <td style={{ textAlign: "right" }}>{n(r.matched_records)}</td>
-                </tr>
-              ))}
-              {!i.measurement_runs.length && (
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
                 <tr>
-                  <td colSpan={3} className="dim">
-                    no reconciliation runs recorded
-                  </td>
+                  <th>completed</th>
+                  <th>revision</th>
+                  <th style={{ textAlign: "right" }}>matched</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {i.measurement_runs.map((r) => (
+                  <tr key={r.completed_at}>
+                    <td>{fmtTime(r.completed_at)}</td>
+                    <td>
+                      <code>{r.revision}</code>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {n(r.matched_records)}
+                    </td>
+                  </tr>
+                ))}
+                {!i.measurement_runs.length && (
+                  <tr>
+                    <td colSpan={3} className="dim">
+                      no reconciliation runs recorded
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           <p className="note">
             A reconciliation run re-attributes historical rows from retained
             logs, preserving the original pseudonyms.
