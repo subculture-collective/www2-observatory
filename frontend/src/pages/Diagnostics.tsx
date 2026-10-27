@@ -7,7 +7,12 @@ import type {
   DiagnosticsReport,
 } from "../api/types.ts";
 import { useData } from "../lib/settings.tsx";
-import { familyLabels, kindLabels, kindColor } from "../lib/diagnostics.ts";
+import {
+  familyLabels,
+  familyColor,
+  kindLabels,
+  kindColor,
+} from "../lib/diagnostics.ts";
 import { fmtShort, n, pct, short, fmtDuration } from "../lib/format.ts";
 import { Panel, ErrorNote } from "../ui/Panel.tsx";
 import { Table, StatusTag, Meter } from "../ui/Table.tsx";
@@ -109,6 +114,21 @@ export function Diagnostics() {
           />
         </Panel>
         <Panel title="Probe families" span={4} chip="path and query patterns">
+          <Bars
+            items={r.families.map((f) => ({
+              key: f.family,
+              label: familyLabels[f.family] ?? f.family,
+              value: f.requests,
+              color: familyColor(f.family),
+              onClick: () => nav(`/events?family=${f.family}`),
+            }))}
+          />
+          <p className="note">
+            Colors identify request families, not severity. Shares are of
+            family-classified probes in this window. Select a bar or row to
+            inspect the matching events.{" "}
+            <Link to="/glossary#probe-colors">Color key →</Link>
+          </p>
           <Table<ProbeFamily>
             rows={r.families}
             rowKey={(v) => v.family}
@@ -119,7 +139,9 @@ export function Diagnostics() {
                 key: "family",
                 label: "family",
                 render: (v) => (
-                  <b className="warn">{familyLabels[v.family] ?? v.family}</b>
+                  <b style={{ color: familyColor(v.family) }}>
+                    {familyLabels[v.family] ?? v.family}
+                  </b>
                 ),
                 sort: (v) => v.family,
               },
@@ -218,7 +240,11 @@ export function Diagnostics() {
               {
                 key: "family",
                 label: "family",
-                render: (v) => familyLabels[v.family] ?? "—",
+                render: (v) => (
+                  <span style={{ color: familyColor(v.family) }}>
+                    {familyLabels[v.family] ?? "—"}
+                  </span>
+                ),
                 sort: (v) => v.family,
               },
               {
