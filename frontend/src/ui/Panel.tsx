@@ -6,7 +6,15 @@ import { D, type Description } from "../lib/descriptions.ts";
  * an "?" control that opens the view's description: what it shows, what it
  * determines, why it is recorded, caveats, and the API source.
  */
-export function Panel({ id, title, chip, children, className = "", span, tone }: {
+export function Panel({
+  id,
+  title,
+  chip,
+  children,
+  className = "",
+  span,
+  tone,
+}: {
   id?: keyof typeof D;
   title?: string;
   chip?: ReactNode;
@@ -17,7 +25,10 @@ export function Panel({ id, title, chip, children, className = "", span, tone }:
 }) {
   const desc = id ? D[id] : undefined;
   return (
-    <section className={`panel ${className} ${span ? `span-${span}` : ""} ${tone ? `tone-${tone}` : ""}`} aria-label={title ?? desc?.title}>
+    <section
+      className={`panel ${className} ${span ? `span-${span}` : ""} ${tone ? `tone-${tone}` : ""}`}
+      aria-label={title ?? desc?.title}
+    >
       {(title || desc || chip) && (
         <header className="panel-head">
           <h2>{title ?? desc?.title}</h2>
@@ -32,7 +43,13 @@ export function Panel({ id, title, chip, children, className = "", span, tone }:
   );
 }
 
-export function Info({ desc, inline }: { desc: Description; inline?: boolean }) {
+export function Info({
+  desc,
+  inline,
+}: {
+  desc: Description;
+  inline?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const labelId = useId();
@@ -40,7 +57,8 @@ export function Info({ desc, inline }: { desc: Description; inline?: boolean }) 
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("mousedown", onClick);
@@ -51,11 +69,22 @@ export function Info({ desc, inline }: { desc: Description; inline?: boolean }) 
   }, [open]);
   return (
     <div className={`info ${inline ? "info-inline" : ""}`} ref={ref}>
-      <button className="info-btn" aria-expanded={open} aria-controls={labelId} onClick={() => setOpen((v) => !v)} title="What am I looking at?">
+      <button
+        className="info-btn"
+        aria-expanded={open}
+        aria-controls={labelId}
+        onClick={() => setOpen((v) => !v)}
+        title="What am I looking at?"
+      >
         ?
       </button>
       {open && (
-        <div className="info-pop" id={labelId} role="dialog" aria-label={`About ${desc.title}`}>
+        <div
+          className="info-pop"
+          id={labelId}
+          role="dialog"
+          aria-label={`About ${desc.title}`}
+        >
           <div className="info-title">{desc.title}</div>
           <dl>
             <dt>what this shows</dt>
@@ -83,7 +112,11 @@ export function Info({ desc, inline }: { desc: Description; inline?: boolean }) 
   );
 }
 
-export function Empty({ children = "no records in this window" }: { children?: ReactNode }) {
+export function Empty({
+  children = "no records in this window",
+}: {
+  children?: ReactNode;
+}) {
   return <p className="empty">{children}</p>;
 }
 
@@ -91,7 +124,7 @@ export function ErrorNote({ error }: { error: string }) {
   if (!error) return null;
   return (
     <p className="error-note" role="alert">
-      request failed: {error}. showing the last successful response.
+      request failed: {error}. Existing results, if any, may be stale.
     </p>
   );
 }

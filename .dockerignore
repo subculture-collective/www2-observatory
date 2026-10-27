@@ -2,6 +2,8 @@
 .gitignore
 .env
 state/
+backups/
+relay-ledger/
 __pycache__/
 .mypy_cache/
 frontend/node_modules/

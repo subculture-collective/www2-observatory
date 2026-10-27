@@ -13,100 +13,177 @@ export interface Description {
 }
 
 export const D: Record<string, Description> = {
+  replay: {
+    title: "Traffic replay",
+    what: "Recorded request totals, probe counts, 404s and source counts per selected UTC bucket. The initial selection is the busiest bucket.",
+    determines:
+      "Where a burst sits within the chosen window and which requests belong to that time slice.",
+    why: "A large 404 percentage can come from one short burst. Scrubbing the timeline separates that burst from quieter periods.",
+    caveats: [
+      "These are aggregates, not individual packet animations. Probe counts and 404s overlap.",
+      "Empty buckets mean no retained records in that interval. The first and last buckets are partial.",
+      "Playback is manual and disabled under Reduce Motion; stepping and scrubbing remain available.",
+    ],
+    source:
+      "/api/diagnostics → timeline; /api/recent?since=<seconds>&until=<seconds>",
+  },
+  diagnostics: {
+    title: "Request diagnostics",
+    what: "Versioned request-shape labels: exploit payloads, sensitive-file searches, platform probes, conventional discovery misses, missing assets and public resources, and unclassified traffic.",
+    determines:
+      "Which observable patterns explain traffic volume and missing routes, and which responses deserve inspection.",
+    why: "A raw 404 rate mixes harmless missing files, guessed object paths, and exploit probes. Source concentration and user-agent churn help reveal bursts.",
+    caveats: [
+      "Patterns do not establish intent, a vulnerability, or exploit success. A 2xx probe needs response inspection.",
+      "User-agent labels and referrer headers can be forged. Sources can represent shared networks.",
+      "These additive diagnostics are backfilled from retained metadata; historical research classes and funnel facts are unchanged.",
+      "Public write text is excluded from query-payload matching. Unknown 404s remain unknown.",
+    ],
+    source: "/api/diagnostics; request-shape-v1; research/diagnostics.go",
+  },
   requests: {
     title: "Requests",
     what: "Count of access-log records in the window, with the change against the previous window of equal length.",
     determines: "How much traffic the site received, of any kind.",
     why: "Every other number is a fraction of this one. A change here without a change in resource requests usually means scanners or crawlers.",
-    caveats: ["Includes static assets, errors, scans, and operator probes.", "One record per HTTP request as logged by Caddy."],
+    caveats: [
+      "Includes static assets, errors, scans, and operator probes.",
+      "One record per HTTP request as logged by Caddy.",
+    ],
     source: "/api/summary → requests, prev_requests",
   },
   clients: {
     title: "Client fingerprints",
     what: "Distinct HMAC of validated address plus User-Agent string.",
-    determines: "How many distinct address+agent pairs made requests. Sources count addresses alone.",
+    determines:
+      "How many distinct address+agent pairs made requests. Sources count addresses alone.",
     why: "A fingerprint is the unit the funnel is measured on. It lets repeat behaviour be seen without storing who anyone is.",
-    caveats: ["Not a person, a model, or an agent. One machine with two agents is two fingerprints; two machines behind one NAT with the same agent is one.", "Rotating addresses split one actor into many fingerprints."],
+    caveats: [
+      "Not a person, a model, or an agent. One machine with two agents is two fingerprints; two machines behind one NAT with the same agent is one.",
+      "Rotating addresses split one actor into many fingerprints.",
+    ],
     source: "/api/summary → clients, sources",
   },
   resource: {
     title: "Resource requests",
     what: "Successful requests to a relay resource: pages, collections, text mirrors, feeds, notes, files.",
-    determines: "How much of the traffic touched the site's actual content rather than probing or missing.",
+    determines:
+      "How much of the traffic touched the site's actual content rather than probing or missing.",
     why: "This is the population eligible for the funnel. Scan-shaped, operator-marked, and other requests are excluded from milestone counting.",
-    caveats: ["Intent is not verified. A crawler indexing help.txt is a resource request.", "A 404 on a resource path is 'other', not 'resource'."],
+    caveats: [
+      "Intent is not verified. A crawler indexing help.txt is a resource request.",
+      "A 404 on a resource path is 'other', not 'resource'.",
+    ],
     source: "/api/summary → engagement; classification in research/classify.go",
   },
   writes: {
-    title: "Successful writes",
+    title: "HTTP write outcomes",
     what: "Requests whose HTTP outcome indicates content was accepted: PUT to a note with 2xx, POST redirects that name a created object, wall/guestbook POST success, and GET writes-by-link with 2xx.",
-    determines: "How often something was written to the public site, and how many of those arrived through a plain GET.",
+    determines:
+      "How often HTTP responses matched the existing write rules. This is an upper bound on stored changes, especially for GET writes.",
     why: "A write is the first milestone that cannot be explained by indexing. Writes by link are counted separately because they are the path a fetch-only client can use.",
-    caveats: ["A deduplicated or refused link write also answers 2xx with an explanatory body; link writes are an upper bound.", "Write-method requests counts POST/PUT/PATCH/DELETE of any status, including failures."],
+    caveats: [
+      "A deduplicated or refused link write also answers 2xx with an explanatory body; link writes are an upper bound.",
+      "Write-method requests counts POST/PUT/PATCH/DELETE of any status, including failures.",
+    ],
     source: "/api/summary → writes, link_writes, write_methods",
   },
   timeline: {
     title: "Traffic over time",
     what: "Requests per hour (or per day for long windows), stacked by traffic class, method, representation served, or outcome.",
-    determines: "When traffic arrives and what kind it is. Empty buckets are drawn as zero.",
+    determines:
+      "When traffic arrives and what kind it is. Empty buckets are drawn as zero.",
     why: "Automated clients have rhythms: crawlers come daily, scanners burst, a fetch-only client that returns shows as a repeat at an interval.",
-    caveats: ["UTC buckets. The first and last bucket are partial.", "Markers on the axis are dated interventions from the ledger; traffic after a marker is not attributable to it."],
+    caveats: [
+      "UTC buckets. The first and last bucket are partial.",
+      "Markers on the axis are dated interventions from the ledger; traffic after a marker is not attributable to it.",
+    ],
     source: "/api/timeline → per-bucket breakdown; /api/interventions",
   },
   funnel: {
     title: "Ordered funnel",
     what: "Number of eligible fingerprints that reached each stage in strict order: discovery, capability inspection, structured/text retrieval, successful write, later retrieval of their own object.",
-    determines: "How far any single fingerprint has gone toward using the site as a read/write store, without skipping steps.",
+    determines:
+      "How far any single fingerprint has gone toward using the site as a read/write store, without skipping steps.",
     why: "Volume says nothing about behaviour. The funnel is the shape of the question the site exists to answer: does an unprompted client find it, understand it, write, and come back?",
-    caveats: ["Stages must occur with increasing timestamps; a client that writes first and reads help later is counted at discovery only.", "Only verified-address resource traffic is eligible. Unmarked operator traffic may remain inside it.", "Reaching the last stage is still not proof of an autonomous agent."],
+    caveats: [
+      "Stages must occur with increasing timestamps; a client that writes first and reads help later is counted at discovery only.",
+      "Only verified-address resource traffic is eligible. Unmarked operator traffic may remain inside it.",
+      "Reaching the last stage is still not proof of an autonomous agent.",
+    ],
     source: "/api/experiment → stages, evidence; analytics/experiment.go",
   },
   return: {
     title: "Returns and cross-source reads",
     what: "Returning fingerprints read their own last-written object at least one session gap later. Cross-source reads are 2xx GETs of a written object by a different source than the writer.",
-    determines: "Whether written content is retrieved later, and whether anyone other than the writer reads it.",
+    determines:
+      "Whether written content is retrieved later, and whether anyone other than the writer reads it.",
     why: "A write that is never read is a dead letter. A read by another source is the closest this data comes to one party seeing what another left.",
-    caveats: ["Collection pages (the wall, the guestbook list) cannot prove that a particular entry was read, so wall writes have no object key.", "Same source does not mean same actor; different source does not mean different actor."],
-    source: "/api/experiment → returning_clients, cross_source_reads; /api/objects",
+    caveats: [
+      "Collection pages (the wall, the guestbook list) cannot prove that a particular entry was read, so wall writes have no object key.",
+      "Same source does not mean same actor; different source does not mean different actor.",
+    ],
+    source:
+      "/api/experiment → returning_clients, cross_source_reads; /api/objects",
   },
   outcomes: {
     title: "HTTP outcomes",
     what: "Responses grouped by status class and exact status code.",
-    determines: "How many requests succeeded, were redirected, missed, were refused (429), or failed.",
+    determines:
+      "How many requests succeeded, were redirected, missed, were refused (429), or failed.",
     why: "Refusals and misses separate probing from use. A rise in 429 means the write rate limit is being hit.",
-    caveats: ["A 2xx is not a write and a 4xx is not an attack.", "303 after a form POST is the normal success path for the guestbook and wall."],
+    caveats: [
+      "A 2xx is not a write and a 4xx is not an attack.",
+      "303 after a form POST is the normal success path for the guestbook and wall.",
+    ],
     source: "/api/status, /api/timeline → s2xx…s5xx",
   },
   representations: {
     title: "Representations served",
     what: "Successful responses grouped by the media type family the server chose: HTML, JSON, plain text, Atom/XML, images, CSS.",
-    determines: "Which form of the same content clients asked for. The relay serves text or JSON to clients that do not prefer HTML.",
+    determines:
+      "Which form of the same content clients asked for. The relay serves text or JSON to clients that do not prefer HTML.",
     why: "A client that moves from HTML to text or JSON has found the cheaper representation. That is the third funnel stage.",
-    caveats: ["Content type comes from the response header as logged; missing headers land in 'none'.", "Feeds and OPML are XML by design; a crawler fetching sitemap.xml also lands here."],
+    caveats: [
+      "Content type comes from the response header as logged; missing headers land in 'none'.",
+      "Feeds and OPML are XML by design; a crawler fetching sitemap.xml also lands here.",
+    ],
     source: "/api/representations; content_type column",
   },
   heatmap: {
     title: "Hour × weekday",
     what: "Requests by UTC hour of day and day of week, with the resource share.",
-    determines: "Whether traffic follows a human day, a fixed schedule, or neither.",
+    determines:
+      "Whether traffic follows a human day, a fixed schedule, or neither.",
     why: "Humans cluster in evenings and weekends of their time zone. Scheduled fetchers land in the same cell every day.",
-    caveats: ["UTC. A cell holds every week in the window, so a long window smooths bursts.", "Colour is relative to the busiest cell in the window."],
+    caveats: [
+      "UTC. A cell holds every week in the window, so a long window smooths bursts.",
+      "Colour is relative to the busiest cell in the window.",
+    ],
     source: "/api/heatmap",
   },
   entrances: {
     title: "Entrances",
     what: "The first request of each session, by landing path and referring host.",
-    determines: "Where sessions start and, when a Referer was sent, where they came from.",
+    determines:
+      "Where sessions start and, when a Referer was sent, where they came from.",
     why: "Distribution work (webring, directories, search) should show up here first. Fetch-only clients rarely send a Referer and often enter at robots.txt or a text mirror.",
-    caveats: ["Most clients send no Referer. Empty host means unknown, not direct.", "Referrer query strings are stripped at ingest; only the host is kept."],
+    caveats: [
+      "Most clients send no Referer. Empty host means unknown, not direct.",
+      "Referrer query strings are stripped at ingest; only the host is kept.",
+    ],
     source: "/api/entrances; referer_host column",
   },
   paths: {
     title: "Paths",
     what: "Every requested path with hits, distinct fingerprints, class split, method split, and writes.",
-    determines: "Which resources are used and by how many, and where writes land.",
+    determines:
+      "Which resources are used and by how many, and where writes land.",
     why: "The site offers the same content at several addresses. Which ones get used tells you what clients can find.",
-    caveats: ["Query strings are excluded from the path key.", "Static assets dominate hit counts for browser traffic."],
+    caveats: [
+      "Query strings are excluded from the path key.",
+      "Static assets dominate hit counts for browser traffic.",
+    ],
     source: "/api/paths",
   },
   agents: {
@@ -114,15 +191,22 @@ export const D: Record<string, Description> = {
     what: "Requests grouped by the exact User-Agent string, with fingerprints, sources, class and representation splits, and writes.",
     determines: "Which software identities appeared and how they behaved.",
     why: "A User-Agent is a claim, but a consistent claim across sources with the same behaviour is still information.",
-    caveats: ["Trivially forged. Treat as a label, not identity.", "Automation score comes from heuristics on method, Accept header, and agent string."],
+    caveats: [
+      "Trivially forged. Treat as a label, not identity.",
+      "Automation score comes from heuristics on method, Accept header, and agent string.",
+    ],
     source: "/api/user-agents; scoring/scoring.go",
   },
   clientsTable: {
     title: "Fingerprint table",
     what: "One row per client fingerprint active in the window: activity span, sessions, paths, class and method mix, representations, writes, address basis.",
-    determines: "Which fingerprints did what, sortable by recency, volume, writes, or automation score.",
+    determines:
+      "Which fingerprints did what, sortable by recency, volume, writes, or automation score.",
     why: "Behaviour is per actor, not per request. This is the list you drill into.",
-    caveats: ["Address basis 'caddy-client-v2' means the address came from the trusted proxy field. Legacy rows cannot be re-attributed and are excluded from the funnel.", "The User-Agent shown is one of possibly several for the same address."],
+    caveats: [
+      "Address basis 'caddy-client-v2' means the address came from the trusted proxy field. Legacy rows cannot be re-attributed and are excluded from the funnel.",
+      "The User-Agent shown is one of possibly several for the same address.",
+    ],
     source: "/api/clients",
   },
   clientDetail: {
@@ -130,47 +214,71 @@ export const D: Record<string, Description> = {
     what: "Everything recorded about one fingerprint: aggregate, funnel stages reached with the evidence event, sessions with their request trails, objects written, and the raw event list.",
     determines: "The full observable history of one address+agent pair.",
     why: "This is where a milestone is checked by hand: which request, at what time, with what response.",
-    caveats: ["Stages are computed over the last 90 days regardless of the selected window.", "Trails show method, path, query, and status; bodies are never logged."],
+    caveats: [
+      "Stages are computed over the last 90 days regardless of the selected window.",
+      "Trails show method, path, query, and status; bodies are never logged.",
+    ],
     source: "/api/client?id=",
   },
   objects: {
     title: "Written objects",
     what: "Every note, guestbook entry, or file that a write created or changed, with who wrote it and how it was read afterwards.",
-    determines: "Whether written content was read, by how many fingerprints and sources, and whether a source other than the writer read it.",
+    determines:
+      "Whether written content was read, by how many fingerprints and sources, and whether a source other than the writer read it.",
     why: "Objects are the shared-board mechanism: one party writes at an address, another reads it. This table is that mechanism observed.",
-    caveats: ["Reads are counted only after the first write and only as 2xx GETs.", "Wall posts have no object key because the wall is a collection."],
+    caveats: [
+      "Reads are counted only after the first write and only as 2xx GETs.",
+      "Wall posts have no object key because the wall is a collection.",
+    ],
     source: "/api/objects",
   },
   linkWrites: {
     title: "Writes by link",
     what: "GET requests carrying a write parameter: post= on the wall, body= on the guestbook, set= or append= on a note. Status and whether an object key resulted.",
-    determines: "How often the fetch-only write path was used and whether the server accepted the request.",
+    determines:
+      "How often the fetch-only write path was used and whether the server accepted the request.",
     why: "This path exists so that a client with only a fetch tool can write. Its use is the most direct signal of that kind of client.",
-    caveats: ["2xx means the relay answered; it may have deduplicated or refused the content in the body. 429 is the rate limit.", "The query string is logged, so the attempted text is visible here."],
+    caveats: [
+      "2xx means the relay answered; it may have deduplicated or refused the content in the body. 429 is the rate limit.",
+      "The query string is logged, so the attempted text is visible here.",
+    ],
     source: "/api/link-writes; link_write column",
   },
   relayStream: {
     title: "Relay ledger events",
     what: "Rows from the relay's own append-only ledgers, synced from Dozor about once a minute: stored guestbook entries, wall posts, note versions, and files (with scrubbed content), plus the relay's request record for each stored write (method, status, request path).",
-    determines: "What was actually stored, as opposed to what was requested. A GET that the relay deduplicated or refused has no ledger row.",
+    determines:
+      "What was actually stored, as opposed to what was requested. A GET that the relay deduplicated or refused has no ledger row.",
     why: "The access log sees requests; the ledger sees results. Together they separate attempts from stored writes, and the 'stored' column on the objects table comes from here.",
-    caveats: ["Content is scrubbed for credential shapes and truncated at ingest.", "Ledger rows carry the relay's own address pseudonym, keyed differently from the observatory's; the two are joined by object path, not by identity.", "Sync lag is up to a minute; a write can appear in the access log before its ledger row."],
+    caveats: [
+      "Content is scrubbed for credential shapes and truncated at ingest.",
+      "Ledger rows carry the relay's own address pseudonym, keyed differently from the observatory's; the two are joined by object path, not by identity.",
+      "Sync lag is up to a minute; a write can appear in the access log before its ledger row.",
+    ],
     source: "/api/writes; relay_events table; OBS_RELAY_DIR",
   },
   conventions: {
     title: "Repeated tokens",
     what: "Tokens that appear in more than one relay write event, with how many fingerprints used them.",
-    determines: "Whether writers reuse names, paths, or words that the site never documented.",
+    determines:
+      "Whether writers reuse names, paths, or words that the site never documented.",
     why: "A convention the operator did not supply is the strongest signal of coordination among writers.",
-    caveats: ["Computed from relay ledger content, so it reflects stored text only.", "Common words are stop-listed; tokens are a heuristic."],
+    caveats: [
+      "Computed from relay ledger content, so it reflects stored text only.",
+      "Common words are stop-listed; tokens are a heuristic.",
+    ],
     source: "/api/conventions",
   },
   events: {
     title: "Event log",
     what: "Raw access records, newest first, filterable by class, method, automation level, status, fingerprint, link writes, and text search.",
-    determines: "Exactly what was requested and answered, one line per request.",
+    determines:
+      "Exactly what was requested and answered, one line per request.",
     why: "Every aggregate on every other page resolves to rows here.",
-    caveats: ["Bodies are never logged. Query strings are.", "Raw addresses are discarded at ingest; only HMAC pseudonyms exist."],
+    caveats: [
+      "Bodies are never logged. Query strings are.",
+      "Raw addresses are discarded at ingest; only HMAC pseudonyms exist.",
+    ],
     source: "/api/recent, /api/event",
   },
   signals: {
@@ -178,7 +286,10 @@ export const D: Record<string, Description> = {
     what: "Heuristic flags raised per request (non-browser agent, JSON-only Accept, OPTIONS, machine-friendly suffix, discovery resource) and the score they add up to.",
     determines: "How machine-shaped a request looks.",
     why: "A cheap, explainable prior. It is not used to include or exclude anything from the funnel.",
-    caveats: ["Scores are additive points from fixed rules; high is 6 or more.", "A browser extension or a curl user trips the same rules as a script."],
+    caveats: [
+      "Scores are additive points from fixed rules; high is 6 or more.",
+      "A browser extension or a curl user trips the same rules as a script.",
+    ],
     source: "/api/signals; scoring/scoring.go",
   },
   interventions: {
@@ -186,31 +297,46 @@ export const D: Record<string, Description> = {
     what: "Dated ledger of every change the operator made to the public site or to measurement, with resource hashes.",
     determines: "What was different before and after a date.",
     why: "Behaviour can only be called emergent if the operator can show they did not supply it. This ledger is that record.",
-    caveats: ["Public interventions change what clients can see; measurement interventions change how the same logs are counted.", "Distribution interventions (search submissions, directory listings) induce traffic that is not ambient discovery."],
+    caveats: [
+      "Public interventions change what clients can see; measurement interventions change how the same logs are counted.",
+      "Distribution interventions (search submissions, directory listings) induce traffic that is not ambient discovery.",
+    ],
     source: "/api/interventions; docs/INTERVENTIONS.json in the relay repo",
   },
   ingest: {
     title: "Ingest and storage",
     what: "Record counts, newest record age, ingest offsets per log file, class and attribution totals over the whole database, SQLite size and journal mode.",
-    determines: "Whether the observatory is current and what fraction of history is usable for the funnel.",
+    determines:
+      "Whether the observatory is current and what fraction of history is usable for the funnel.",
     why: "A stale ingest looks like quiet traffic. Check here first.",
-    caveats: ["Newest record age depends on Caddy flushing its log.", "Legacy attribution rows predate the trusted-proxy field and stay excluded."],
+    caveats: [
+      "Newest record age depends on Caddy flushing its log.",
+      "Legacy attribution rows predate the trusted-proxy field and stay excluded.",
+    ],
     source: "/api/ingest",
   },
   sessions: {
     title: "Sessions",
     what: "Requests from one fingerprint grouped until a gap longer than the configured session window (30 minutes by default).",
-    determines: "How a visit unfolded: order of requests, duration, whether it wrote.",
+    determines:
+      "How a visit unfolded: order of requests, duration, whether it wrote.",
     why: "The order of requests inside a session is what separates 'read help, then wrote' from 'wrote blindly'.",
-    caveats: ["Sessions are reconstructed after the fact and split on time alone.", "A client that polls every 20 minutes is one endless session."],
+    caveats: [
+      "Sessions are reconstructed after the fact and split on time alone.",
+      "A client that polls every 20 minutes is one endless session.",
+    ],
     source: "/api/client → sessions; /api/sessions",
   },
   radar: {
     title: "Recent fingerprints",
     what: "Each fingerprint active in the window as a point: angle is recency (newest at the top, sweeping clockwise), distance from centre is requests (log scale), size is writes, colour is dominant class.",
-    determines: "Which fingerprints are recent, how heavy they were, and whether they wrote.",
+    determines:
+      "Which fingerprints are recent, how heavy they were, and whether they wrote.",
     why: "A quick way to see whether recent activity is a few heavy actors or many light ones.",
-    caveats: ["Decorative encoding of the same rows as the fingerprint table.", "Points overlap at the same recency; hover for the row."],
+    caveats: [
+      "Decorative encoding of the same rows as the fingerprint table.",
+      "Points overlap at the same recency; hover for the row.",
+    ],
     source: "/api/clients",
   },
 };
