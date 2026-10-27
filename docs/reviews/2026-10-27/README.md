@@ -76,3 +76,22 @@ For application rollback, recreate only the observatory from its retained
 image. Older binaries ignore the extra columns; retain the current database
 and any later observations. Restoring an older database would discard those
 observations and is a separate recovery action.
+
+## Probe palette follow-up
+
+The palette follow-up assigns fixed colors to each request diagnostic and each
+of the eight probe families. Overview family bars, diagnostic composition,
+Probes & misses bars and tables, and event-log family labels share the same
+mapping in `frontend/src/lib/diagnostics.ts`. The glossary includes a live color
+key at `/glossary#probe-colors`, with interpretation notes. Colors identify
+patterns and do not rank severity or establish exploit success.
+
+Local verification used the retained full-history QA database copy, rather than
+the earlier 1,000-row fixture. Overview, Probes & misses, and Glossary fit 1920px,
+390px, and 320px viewports without page overflow. The seven families present in
+that copy rendered with distinct colors in both chart views; the glossary also
+shows the injection-family color even when that family has no records. Selecting
+the sensitive-file family opened its filtered event list. Browser console checks
+reported no errors or warnings. All palette colors exceed 8:1 contrast against
+`#100d17`; labels and counts remain visible alongside colors. TypeScript and the
+Vite production build passed. The earlier screenshots above predate this palette.

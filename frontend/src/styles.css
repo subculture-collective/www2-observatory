@@ -1900,3 +1900,8 @@ table.data td .wrap {
     font-size: 26px;
   }
 }
+
+.diagnostic-color-key {
+  margin: 12px 0 20px;
+  gap: 12px 20px;
+}

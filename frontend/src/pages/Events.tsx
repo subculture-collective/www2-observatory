@@ -7,7 +7,12 @@ import { ClassTag, MethodTag, StatusTag, Table } from "../ui/Table.tsx";
 import { EventDrawer } from "../ui/EventDrawer.tsx";
 import { useData, useSettings } from "../lib/settings.tsx";
 import { fmtBytes, fmtTime, short } from "../lib/format.ts";
-import { familyLabels, kindLabels, kindColor } from "../lib/diagnostics.ts";
+import {
+  familyLabels,
+  familyColor,
+  kindLabels,
+  kindColor,
+} from "../lib/diagnostics.ts";
 
 const CLASSES = ["", "engagement", "scanner", "operator", "other"];
 const METHODS = [
@@ -303,7 +308,10 @@ export function Events() {
                   >
                     {kindLabels[r.request_kind] ?? r.request_kind}
                     {r.probe_family && (
-                      <small className="block dim">
+                      <small
+                        className="block"
+                        style={{ color: familyColor(r.probe_family) }}
+                      >
                         {familyLabels[r.probe_family] ?? r.probe_family}
                       </small>
                     )}

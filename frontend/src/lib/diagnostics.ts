@@ -20,13 +20,29 @@ export const familyLabels: Record<string, string> = {
   "react-server-components": "React component probes",
   "admin-discovery": "admin / device discovery",
 };
-export const kindColor = (kind: string) =>
-  kind.includes("probe")
-    ? "var(--orange)"
-    : kind.includes("miss")
-      ? "var(--yellow)"
-      : kind === "resource"
-        ? "var(--cyan)"
-        : kind === "operator"
-          ? "var(--magenta)"
-          : "var(--fg-dim)";
+// Fixed semantic palettes: filtering and sorting must never change a label's color.
+export const kindColors: Record<string, string> = {
+  "exploit-probe": "#ff8296",
+  "secret-probe": "#ffc56e",
+  "platform-probe": "#c4a1ff",
+  "discovery-miss": "#b9dc75",
+  "resource-miss": "#83b7ff",
+  "asset-miss": "#71ddbb",
+  "unknown-miss": "#d4c68b",
+  resource: "#59d8ee",
+  operator: "#ef9fdd",
+  unclassified: "#a9b2c3",
+};
+export const familyColors: Record<string, string> = {
+  "path-traversal": "#ff8296",
+  injection: "#f694d2",
+  "sensitive-files": "#ffc56e",
+  wordpress: "#83b7ff",
+  "php-cgi": "#b9dc75",
+  framework: "#c4a1ff",
+  "react-server-components": "#59d8ee",
+  "admin-discovery": "#71ddbb",
+};
+export const kindColor = (kind: string) => kindColors[kind] ?? "#a9b2c3";
+export const familyColor = (family: string) =>
+  familyColors[family] ?? "#a9b2c3";

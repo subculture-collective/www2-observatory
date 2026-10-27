@@ -16,7 +16,12 @@ import { EventDrawer } from "../ui/EventDrawer.tsx";
 import { TelemetryCore } from "../charts/TelemetryCore.tsx";
 import { TrafficReplay } from "../charts/TrafficReplay.tsx";
 import { DiagnosticTimeline } from "../charts/DiagnosticTimeline.tsx";
-import { familyLabels, kindColor, kindLabels } from "../lib/diagnostics.ts";
+import {
+  familyLabels,
+  familyColor,
+  kindColor,
+  kindLabels,
+} from "../lib/diagnostics.ts";
 
 export function Overview() {
   const { hours } = useSettings();
@@ -222,7 +227,7 @@ export function Overview() {
               key: f.family,
               label: familyLabels[f.family] ?? f.family,
               value: f.requests,
-              color: "var(--orange)",
+              color: familyColor(f.family),
               sub: `${f.sources} sources · ${f.paths} paths`,
               onClick: () => nav(`/events?family=${f.family}`),
             }))}

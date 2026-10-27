@@ -38,6 +38,7 @@ export const D: Record<string, Description> = {
       "User-agent labels and referrer headers can be forged. Sources can represent shared networks.",
       "These additive diagnostics are backfilled from retained metadata; historical research classes and funnel facts are unchanged.",
       "Public write text is excluded from query-payload matching. Unknown 404s remain unknown.",
+      "Request categories and probe families use fixed, distinct colors across views. Colors identify patterns, not severity; see the Glossary color key.",
     ],
     source: "/api/diagnostics; request-shape-v1; research/diagnostics.go",
   },

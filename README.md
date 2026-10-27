@@ -48,6 +48,8 @@ The production runtime uses a **Go API/runtime** plus a **Vite TypeScript React*
 
 The interface uses the Evangelion-rice palette: monospace, small-caps labels, thin bordered panels, acid green, purple, cyan, and optional scanlines. The overview is a deliberately excessive command room, with a rotating wireframe instrument, fingerprint radar, and a traffic replay deck. Counts come from recorded requests; decorative geometry carries no geographic or threat-severity meaning. Chart containers stay flat so transforms cannot hide responsive charts.
 
+Probe charts use fixed semantic colors, so sorting, filtering, and changing the time window do not reassign them. Broad request types have distinct hues; individual probe families use coral (traversal), pink (injection), amber (sensitive files), blue (WordPress), lime (PHP/CGI), violet (framework internals), cyan (React component probes), and mint (admin/device discovery). These colors identify patterns, not severity or exploit success. Text labels and counts accompany the colors. The live key is at `/glossary#probe-colors`; palette definitions live in `frontend/src/lib/diagnostics.ts`. The probe / response timeline continues to show all probes as one aggregate series.
+
 Every panel has a **?** control that opens a description with five parts: what the view shows, what it determines, why it is recorded, caveats, and the API source. The same text is collected on the glossary page and lives in `frontend/src/lib/descriptions.ts`.
 
 Pages:
