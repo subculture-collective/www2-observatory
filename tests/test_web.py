@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import time
 
 from observatory import analytics, views
 from observatory.db import connect
@@ -17,7 +18,7 @@ class WebViewsTests(unittest.TestCase):
                 automation_score, automation_level, signals_json
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                1790000000.0, "www2.onnwee.me", "evt-1", "src-1", "client-1", "sess-1",
+                time.time() - 60, "www2.onnwee.me", "evt-1", "src-1", "client-1", "sess-1",
                 "GET", "/notes", "format=json", 200, "curl/8.6", "application/json",
                 "", "", "application/json", 1024, 7, "high", '["capability-probe","json-preference"]'
             )

@@ -10,18 +10,31 @@ const SCOPE_TONE: Record<string, string> = {
 
 export function InterventionsPage() {
   const { data, error } = useData(() => api.interventions());
-  if (!data) return <p className="empty">loading…</p>;
-  const changes = [...data.changes].sort((a, b) => b.date.localeCompare(a.date));
+  if (!data)
+    return error ? (
+      <ErrorNote error={error} />
+    ) : (
+      <p className="empty">loading…</p>
+    );
+  const changes = [...data.changes].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
   return (
     <>
       <ErrorNote error={error} />
-      <Panel id="interventions" span={4} chip={`${changes.length} entries · ledger v${data.version} · dates in ${data.timezone}`}>
+      <Panel
+        id="interventions"
+        span={4}
+        chip={`${changes.length} entries · ledger v${data.version} · dates in ${data.timezone}`}
+      >
         <ol className="ledger">
           {changes.map((c) => (
             <li key={c.id}>
               <div className="ledger-when">
                 <b>{c.date}</b>
-                <span className={`tag ${SCOPE_TONE[c.scope] ?? ""}`}>{c.scope}</span>
+                <span className={`tag ${SCOPE_TONE[c.scope] ?? ""}`}>
+                  {c.scope}
+                </span>
               </div>
               <div className="ledger-body">
                 <h3>
@@ -50,7 +63,11 @@ export function InterventionsPage() {
           ))}
         </ol>
         <p className="note">
-          Public interventions change what visitors can see. Private measurement changes how the same logs are counted. Distribution interventions announce the site somewhere and induce traffic that is not ambient discovery. The ledger is copied from the relay repository at build time.
+          Public interventions change what visitors can see. Private measurement
+          changes how the same logs are counted. Distribution interventions
+          announce the site somewhere and induce traffic that is not ambient
+          discovery. The ledger is copied from the relay repository at build
+          time.
         </p>
       </Panel>
     </>

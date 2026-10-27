@@ -131,6 +131,10 @@ func migrateAccessColumns(conn *sql.DB) error {
 		{"write_object", "TEXT NOT NULL DEFAULT ''"},
 		{"successful_write", "INTEGER NOT NULL DEFAULT 0"},
 		{"link_write", "TEXT NOT NULL DEFAULT ''"},
+		{"request_kind", "TEXT NOT NULL DEFAULT 'unclassified'"},
+		{"probe_family", "TEXT NOT NULL DEFAULT ''"},
+		{"diagnostic_reason", "TEXT NOT NULL DEFAULT ''"},
+		{"diagnostic_revision", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		if !cols[col.name] {
 			if _, err := conn.Exec("ALTER TABLE access_events ADD COLUMN " + col.name + " " + col.definition); err != nil {
@@ -140,6 +144,11 @@ func migrateAccessColumns(conn *sql.DB) error {
 	}
 	if _, err = conn.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_access_event_key ON access_events(event_key) WHERE event_key IS NOT NULL"); err != nil {
 		return err
+	}
+	for _, index := range []string{"CREATE INDEX IF NOT EXISTS idx_access_kind_ts ON access_events(request_kind,ts)", "CREATE INDEX IF NOT EXISTS idx_access_probe_ts ON access_events(probe_family,ts)"} {
+		if _, err := conn.Exec(index); err != nil {
+			return err
+		}
 	}
 	rows, err = conn.Query("PRAGMA table_info(relay_events)")
 	if err != nil {

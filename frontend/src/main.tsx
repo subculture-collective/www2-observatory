@@ -5,6 +5,7 @@ import { SettingsProvider } from "./lib/settings.tsx";
 import { Shell } from "./ui/Shell.tsx";
 import { Overview } from "./pages/Overview.tsx";
 import { Traffic } from "./pages/Traffic.tsx";
+import { Diagnostics } from "./pages/Diagnostics.tsx";
 import { FunnelPage } from "./pages/FunnelPage.tsx";
 import { Clients } from "./pages/Clients.tsx";
 import { ClientDetailPage } from "./pages/ClientDetailPage.tsx";
@@ -23,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
           <Route element={<Shell />}>
             <Route index element={<Overview />} />
             <Route path="traffic" element={<Traffic />} />
+            <Route path="diagnostics" element={<Diagnostics />} />
             <Route path="funnel" element={<FunnelPage />} />
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:id" element={<ClientDetailPage />} />

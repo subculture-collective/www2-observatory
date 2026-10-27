@@ -53,21 +53,41 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	q := r.URL.Query()
-	hours := queryInt(q.Get("hours"), 24)
+	hours := max(1, min(queryInt(q.Get("hours"), 720), 2160))
 	limit := queryInt(q.Get("limit"), 100)
+	var status *int
+	if raw := q.Get("status"); raw != "" {
+		value := queryInt(raw, 0)
+		status = &value
+	}
+	eventOptions := analytics.EventOptions{Hours: hours, Kind: q.Get("kind"), Family: q.Get("family"), Path: q.Get("path")}
+	for _, field := range []struct {
+		name   string
+		target *float64
+	}{{"since", &eventOptions.Since}, {"until", &eventOptions.Until}} {
+		if q.Get(field.name) != "" {
+			value, parseErr := strconv.ParseInt(q.Get(field.name), 10, 64)
+			if parseErr != nil || value < 1 || value > 253402300799 {
+				writeJSON(w, map[string]string{"error": "invalid " + field.name + " timestamp"}, http.StatusBadRequest)
+				return
+			}
+			*field.target = float64(value)
+		}
+	}
+	if eventOptions.Until > 0 && eventOptions.Since >= eventOptions.Until {
+		writeJSON(w, map[string]string{"error": "until must follow since"}, http.StatusBadRequest)
+		return
+	}
 	var out any
 	switch r.URL.Path {
 	case "/api/experiment":
 		out, err = analytics.Experiment(conn, hours, s.cfg.SessionMinutes)
 	case "/api/summary":
 		out, err = analytics.SummaryEx(conn, hours)
+	case "/api/diagnostics":
+		out, err = analytics.Diagnostics(conn, hours)
 	case "/api/recent":
-		var status *int
-		if raw := q.Get("status"); raw != "" {
-			value := queryInt(raw, 0)
-			status = &value
-		}
-		out, err = analytics.RecentEx(conn, limit, q.Get("method"), q.Get("level"), status, q.Get("search"), q.Get("class"), q.Get("client"), q.Get("link") == "1")
+		out, err = analytics.RecentEx(conn, limit, q.Get("method"), q.Get("level"), status, q.Get("search"), q.Get("class"), q.Get("client"), q.Get("link") == "1", eventOptions)
 	case "/api/timeline":
 		out, err = analytics.TimelineEx(conn, hours, q.Get("bucket"))
 	case "/api/clients":
@@ -108,11 +128,11 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	case "/api/sessions":
 		out, err = analytics.Sessions(conn, hours, limit)
 	case "/api/writes":
-		out, err = analytics.Writes(conn, limit)
+		out, err = analytics.Writes(conn, limit, hours)
 	case "/api/conventions":
 		out, err = analytics.Conventions(conn, hours, limit)
 	case "/api/export.ndjson":
-		rows, err := analytics.RecentEx(conn, min(limit, 500), "", "", nil, "", q.Get("class"), q.Get("client"), false)
+		rows, err := analytics.RecentEx(conn, min(limit, 1000), q.Get("method"), q.Get("level"), status, q.Get("search"), q.Get("class"), q.Get("client"), q.Get("link") == "1", eventOptions)
 		if err != nil {
 			writeError(w, err)
 			return

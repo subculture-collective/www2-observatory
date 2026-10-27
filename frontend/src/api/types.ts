@@ -7,6 +7,7 @@ export interface Breakdown {
   scanner: number;
   operator: number;
   other: number;
+  probes: number;
   m_get?: number;
   m_head?: number;
   m_options?: number;
@@ -87,6 +88,92 @@ export interface AccessEvent {
   write_object: string;
   successful_write: number;
   link_write: string;
+  request_kind: string;
+  probe_family: string;
+  diagnostic_reason: string;
+  diagnostic_revision: string;
+}
+
+export interface DiagnosticSummary {
+  requests: number;
+  sources: number;
+  probes: number;
+  probe_2xx: number;
+  missing: number;
+  probe_404: number;
+  resource_misses: number;
+  asset_misses: number;
+  server_errors: number;
+  rate_limited: number;
+  rejected: number;
+  revalidated: number;
+  pending: number;
+}
+export interface ProbeFamily {
+  family: string;
+  requests: number;
+  sources: number;
+  clients: number;
+  paths: number;
+  missing: number;
+  responses_2xx: number;
+  server_errors: number;
+  last_seen: number;
+}
+export interface DiagnosticSource {
+  source_id: string;
+  requests: number;
+  clients: number;
+  user_agents: number;
+  paths: number;
+  probes: number;
+  missing: number;
+  server_errors: number;
+  first_seen: number;
+  last_seen: number;
+}
+export interface MissingPath {
+  path: string;
+  kind: string;
+  family: string;
+  requests: number;
+  sources: number;
+  internal_referrers: number;
+  last_seen: number;
+}
+export interface DiagnosticsReport {
+  hours: number;
+  revision: string;
+  summary: DiagnosticSummary;
+  kinds: {
+    kind: string;
+    requests: number;
+    sources: number;
+    missing: number;
+    server_errors: number;
+  }[];
+  families: ProbeFamily[];
+  sources: DiagnosticSource[];
+  misses: MissingPath[];
+  review: Pick<
+    AccessEvent,
+    | "id"
+    | "ts"
+    | "path"
+    | "status"
+    | "request_kind"
+    | "probe_family"
+    | "source_id"
+    | "diagnostic_reason"
+  >[];
+  timeline: {
+    bucket: string;
+    requests: number;
+    probes: number;
+    missing: number;
+    server_errors: number;
+    sources: number;
+  }[];
 }
 
 export interface ClientRow extends Breakdown {
@@ -134,7 +221,12 @@ export interface ClientDetail {
   sessions: SessionRow[];
   events: AccessEvent[];
   user_agents: { user_agent: string; hits: number }[];
-  objects: { path: string; writes: number; first_write: number; last_write: number }[];
+  objects: {
+    path: string;
+    writes: number;
+    first_write: number;
+    last_write: number;
+  }[];
   stages: Evidence[];
   stage_labels: Stage[];
 }
@@ -267,8 +359,17 @@ export interface IngestStats {
   journal_mode: string;
   db_size_bytes: number;
   now: number;
-  ingest_state: { source: string; inode: number; offset: number; updated_at: number }[];
-  measurement_runs: { completed_at: number; revision: string; matched_records: number }[];
+  ingest_state: {
+    source: string;
+    inode: number;
+    offset: number;
+    updated_at: number;
+  }[];
+  measurement_runs: {
+    completed_at: number;
+    revision: string;
+    matched_records: number;
+  }[];
   classes: { traffic_class: string; records: number }[];
   attribution: { attribution: string; records: number }[];
 }

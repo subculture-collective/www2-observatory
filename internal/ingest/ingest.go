@@ -237,12 +237,15 @@ func (i *Ingestor) ingestAccess(conn *sql.DB, line string, raw []byte) (int, err
 	cleanRef, refHost := privacy.SanitizeReferrer(rec.Referer, map[string]bool{"www2.onnwee.me": true, "onnwee.me": true})
 	signals, _ := json.Marshal(assessment.Signals)
 	trafficClass, reason := research.Classify(rec)
+	diagnostic := research.Diagnose(rec)
 	result, err := conn.Exec(`INSERT OR IGNORE INTO access_events(
                 ts,host,event_key,source_id,client_id,session_id,method,path,query,status,user_agent,accept_header,
-                referer,referer_host,content_type,response_bytes,automation_score,automation_level,signals_json,attribution,traffic_class,classification_reason,write_object,successful_write,link_write
-            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                referer,referer_host,content_type,response_bytes,automation_score,automation_level,signals_json,attribution,traffic_class,classification_reason,write_object,successful_write,link_write,
+                request_kind,probe_family,diagnostic_reason,diagnostic_revision
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		rec.TS, rec.Host, eventKey, sourceID, clientID, sessionID, strings.ToUpper(rec.Method), truncate(rec.Path, 2048), truncate(rec.Query, 2048),
 		rec.Status, truncate(rec.UserAgent, 1024), truncate(rec.Accept, 1024), cleanRef, refHost, truncate(rec.ContentType, 255), rec.Size, assessment.Score, assessment.Level, string(signals), rec.Attribution, trafficClass, reason, research.WriteObject(rec), research.SuccessfulWrite(rec), research.LinkWriteParam(rec),
+		diagnostic.Kind, diagnostic.Family, diagnostic.Reason, research.DiagnosticRevision,
 	)
 	if err != nil {
 		return 0, err

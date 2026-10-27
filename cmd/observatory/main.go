@@ -58,6 +58,10 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := db.RefreshDiagnostics(conn); err != nil {
+		conn.Close()
+		return err
+	}
 	if err := conn.Close(); err != nil {
 		return err
 	}

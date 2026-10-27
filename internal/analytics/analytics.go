@@ -162,7 +162,10 @@ func Sessions(conn *sql.DB, hours, limit int) ([]map[string]any, error) {
 	return rows, nil
 }
 
-func Writes(conn *sql.DB, limit int) ([]map[string]any, error) {
+func Writes(conn *sql.DB, limit int, hours ...int) ([]map[string]any, error) {
+	if len(hours) > 0 {
+		return scanRows(conn, "SELECT * FROM relay_events WHERE ts>=? ORDER BY ts DESC LIMIT ?", float64(time.Now().Unix())-float64(hours[0]*3600), clamp(limit, 1, 500))
+	}
 	return scanRows(conn, "SELECT * FROM relay_events ORDER BY ts DESC LIMIT ?", clamp(limit, 1, 500))
 }
 

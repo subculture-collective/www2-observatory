@@ -3,20 +3,56 @@ import { Link } from "react-router-dom";
 import type { AccessEvent } from "../api/types.ts";
 import { fmtBytes, fmtTime } from "../lib/format.ts";
 import { ClassTag, MethodTag, StatusTag } from "./Table.tsx";
+import { familyLabels, kindLabels } from "../lib/diagnostics.ts";
 
 /** Right-hand slide-over showing one access record in full. */
-export function EventDrawer({ event, onClose }: { event: AccessEvent; onClose: () => void }) {
+export function EventDrawer({
+  event,
+  onClose,
+}: {
+  event: AccessEvent;
+  onClose: () => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+      if (e.key === "Tab") {
+        const focusables = Array.from(
+          dialogRef.current?.querySelectorAll<HTMLElement>(
+            'a[href],button:not([disabled]),[tabindex="0"]',
+          ) ?? [],
+        );
+        const first = focusables[0],
+          last = focusables.at(-1);
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (previous?.isConnected) previous.focus();
+    };
+  }, []);
   let signals: string[] = [];
   try {
     const parsed: unknown = JSON.parse(event.signals_json);
-    if (Array.isArray(parsed)) signals = parsed.filter((v): v is string => typeof v === "string");
+    if (Array.isArray(parsed))
+      signals = parsed.filter((v): v is string => typeof v === "string");
   } catch {
     /* keep malformed rows readable */
   }
@@ -27,18 +63,31 @@ export function EventDrawer({ event, onClose }: { event: AccessEvent; onClose: (
     </div>
   );
   return (
-    <aside className="drawer" role="dialog" aria-modal="true" aria-label={`Event ${event.id}`}>
+    <aside
+      ref={dialogRef}
+      className="drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Event ${event.id}`}
+    >
       <header className="drawer-head">
         <span>
           event #{event.id} <span className="dim">{fmtTime(event.ts)}</span>
         </span>
-        <button ref={closeRef} className="drawer-close" onClick={onClose} aria-label="Close">
+        <button
+          ref={closeRef}
+          className="drawer-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
           ✕
         </button>
       </header>
       <div className="drawer-body">
         <div className="drawer-line">
-          <MethodTag method={event.method} /> <StatusTag status={event.status} /> <ClassTag cls={event.traffic_class} />
+          <MethodTag method={event.method} />{" "}
+          <StatusTag status={event.status} />{" "}
+          <ClassTag cls={event.traffic_class} />
           <code className="path">
             {event.path}
             {event.query && <span className="dim">?{event.query}</span>}
@@ -53,13 +102,33 @@ export function EventDrawer({ event, onClose }: { event: AccessEvent; onClose: (
         {row("content-type", event.content_type)}
         {row("bytes", fmtBytes(event.response_bytes))}
         {row("write object", event.write_object)}
-        {row("successful write", event.successful_write ? "yes (HTTP-confirmed)" : "no")}
+        {row(
+          "successful write",
+          event.successful_write ? "yes (HTTP-confirmed)" : "no",
+        )}
         {row("write by link", event.link_write ? `${event.link_write}=` : "no")}
         <h3>classification</h3>
-        {row("class", event.traffic_class)}
+        {row(
+          "request shape",
+          kindLabels[event.request_kind] ?? event.request_kind,
+        )}
+        {row(
+          "probe family",
+          familyLabels[event.probe_family] ?? event.probe_family,
+        )}
+        {row("evidence", event.diagnostic_reason)}
+        {row("rule revision", event.diagnostic_revision)}
+        <p className="note">
+          Request patterns do not prove intent or exploit success. Crawler
+          labels in user-agent headers are not authenticated.
+        </p>
+        {row("research class", event.traffic_class)}
         {row("reason", event.classification_reason)}
         {row("address basis", event.attribution)}
-        {row("automation", `${event.automation_score} (${event.automation_level})`)}
+        {row(
+          "automation",
+          `${event.automation_score} (${event.automation_level})`,
+        )}
         {row(
           "signals",
           signals.length ? (
@@ -81,10 +150,24 @@ export function EventDrawer({ event, onClose }: { event: AccessEvent; onClose: (
             {event.client_id}
           </Link>,
         )}
-        {row("source", event.source_id)}
-        {row("session", event.session_id)}
-        {event.original_client_id && row("original client", event.original_client_id)}
-        {row("event key", <span className="mono small">{event.event_key}</span>)}
+        {row(
+          "source",
+          <Link to={`/events?client=${event.source_id}`} onClick={onClose}>
+            {event.source_id}
+          </Link>,
+        )}
+        {row(
+          "session",
+          <Link to={`/events?client=${event.session_id}`} onClick={onClose}>
+            {event.session_id}
+          </Link>,
+        )}
+        {event.original_client_id &&
+          row("original client", event.original_client_id)}
+        {row(
+          "event key",
+          <span className="mono small">{event.event_key}</span>,
+        )}
       </div>
     </aside>
   );

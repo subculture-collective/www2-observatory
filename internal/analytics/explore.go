@@ -18,7 +18,8 @@ const classSums = `
   SUM(CASE WHEN traffic_class='engagement' THEN 1 ELSE 0 END) engagement,
   SUM(CASE WHEN traffic_class='scanner' THEN 1 ELSE 0 END) scanner,
   SUM(CASE WHEN traffic_class='operator' THEN 1 ELSE 0 END) operator,
-  SUM(CASE WHEN traffic_class NOT IN ('engagement','scanner','operator') THEN 1 ELSE 0 END) other`
+  SUM(CASE WHEN traffic_class NOT IN ('engagement','scanner','operator') THEN 1 ELSE 0 END) other,
+  SUM(CASE WHEN probe_family<>'' THEN 1 ELSE 0 END) probes`
 
 const methodSums = `
   SUM(CASE WHEN method='GET' THEN 1 ELSE 0 END) m_get,
@@ -108,6 +109,8 @@ func Clients(conn *sql.DB, hours, limit int, class, order string) ([]map[string]
 		having = " HAVING " + class + " > 0"
 	case "writers":
 		having = " HAVING writes > 0"
+	case "probes":
+		having = " HAVING probes > 0"
 	case "verified":
 		having = " HAVING attribution = 'caddy-client-v2'"
 	}
@@ -175,9 +178,36 @@ func ClientDetail(conn *sql.DB, clientID string, limit, gapMinutes int) (map[str
 }
 
 // RecentEx is Recent with traffic-class and client filters.
-func RecentEx(conn *sql.DB, limit int, method, level string, status *int, search, class, client string, linkOnly bool) ([]map[string]any, error) {
+type EventOptions struct {
+	Hours              int
+	Kind, Family, Path string
+	Since, Until       float64
+}
+
+func RecentEx(conn *sql.DB, limit int, method, level string, status *int, search, class, client string, linkOnly bool, options ...EventOptions) ([]map[string]any, error) {
 	clauses := []string{}
 	args := []any{}
+	if len(options) > 0 {
+		o := options[0]
+		if o.Hours > 0 {
+			clauses = append(clauses, "ts>=?")
+			args = append(args, float64(time.Now().Unix())-float64(o.Hours*3600))
+		}
+		if o.Since > 0 {
+			clauses = append(clauses, "ts>=?")
+			args = append(args, o.Since)
+		}
+		if o.Until > 0 {
+			clauses = append(clauses, "ts<?")
+			args = append(args, o.Until)
+		}
+		for _, f := range []struct{ column, value string }{{"request_kind", o.Kind}, {"probe_family", o.Family}, {"path", o.Path}} {
+			if f.value != "" {
+				clauses = append(clauses, f.column+" = ?")
+				args = append(args, f.value)
+			}
+		}
+	}
 	if method != "" {
 		clauses = append(clauses, "method = ?")
 		args = append(args, strings.ToUpper(method))

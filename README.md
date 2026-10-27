@@ -46,7 +46,7 @@ The observatory never has to receive a request from a visitor. There is no track
 
 The production runtime uses a **Go API/runtime** plus a **Vite TypeScript React** frontend. The Go binary handles log ingestion, SQLite analytics, `/api/*`, `/healthz`, NDJSON export, and serving the compiled React app from `frontend/dist`. Client-side routes fall back to `index.html`.
 
-The interface was redesigned on 2026-09-25 as a set of pages rather than one dashboard. It uses the Evangelion-rice palette (`theme/colors.toml` in that repository): monospace, small-caps labels, thin bordered panels with an inset accent bar, optional scanlines, and one deliberately theatrical element per page that still encodes real data (the fingerprint radar, the tilted timeline). There is no branding copy; every label is a fact or a control.
+The interface uses the Evangelion-rice palette: monospace, small-caps labels, thin bordered panels, acid green, purple, cyan, and optional scanlines. The overview is a deliberately excessive command room, with a rotating wireframe instrument, fingerprint radar, and a traffic replay deck. Counts come from recorded requests; decorative geometry carries no geographic or threat-severity meaning. Chart containers stay flat so transforms cannot hide responsive charts.
 
 Every panel has a **?** control that opens a description with five parts: what the view shows, what it determines, why it is recorded, caveats, and the API source. The same text is collected on the glossary page and lives in `frontend/src/lib/descriptions.ts`.
 
@@ -56,6 +56,7 @@ Pages:
 | --- | --- |
 | `/` overview | Headline numbers with previous-window deltas and sparklines; traffic over time stacked by class, method, representation, outcome, automation, or writes, with intervention markers; fingerprint radar; ordered funnel; outcome and representation rings; newest events; entrances |
 | `/traffic` | Timeline; hour × weekday heatmap; exact status counts; every path with class, method, write, and error splits; every user agent; referring hosts |
+| `/diagnostics` | Probe families, request-shape counts, response timeline, 404 paths, possible broken links, source concentration, user-agent churn, and a review queue for 2xx probes, server errors, and missing resources/assets |
 | `/funnel` | Eligible fingerprints, writes, returns, cross-source reads; the five ordered stages with definitions; class and address-basis totals; milestone evidence; measurement rules |
 | `/clients` | One row per fingerprint, filterable (resource, wrote, verified, scan-shaped, operator, other), sortable; radar |
 | `/clients/<id>` | One fingerprint: aggregate, stages reached with the evidence event, sessions with full trails, objects written, agents, raw events |
@@ -65,7 +66,13 @@ Pages:
 | `/system` | Newest record age, record counts, database size, whole-database class and address-basis totals, automation signals, ingest offsets, reconciliation runs |
 | `/glossary` | All view descriptions in one place |
 
-Top rail: time window (1h to 90d), refresh interval, scanlines, motion, depth, UTC clock. Bottom rail: newest record age, record counts, verified-address share, database size, last refresh. Settings persist in `localStorage`.
+Top rail: time window (1h to 90d), refresh interval, scanlines, motion status, UTC clock, and browser-local time with UTC offset. Defaults are **30 days and 30-second refresh**. The display-version migration applies those defaults once to existing browsers, then preserves new window/refresh choices in `localStorage`. The depth toggle is removed. Motion is on unless the system requests Reduce Motion; changes to that preference apply immediately. Reduced motion freezes the model and radar and disables replay playback while retaining manual scrubbing and stepping.
+
+The replay deck starts on the busiest UTC bucket and opens the matching events with an inclusive `since` and exclusive `until` timestamp. The event table and NDJSON export share the selected time window, diagnostic, probe family, exact path, method, status, research class, automation, source/fingerprint/session, search, and link-write filters. Table limits describe loaded rows; expandable tables do not silently discard rows after the first display page.
+
+Request diagnostics use `request-shape-v1`, independently of the stored research class. On startup the service backfills additive `request_kind`, `probe_family`, `diagnostic_reason`, and `diagnostic_revision` fields from retained request metadata. It preserves IDs, pseudonyms, research classes, write facts, ingest offsets, and raw request evidence. New ingestion fills the same fields immediately. Public message values are excluded from query-payload matching. A 404 alone remains insufficient to label a request a probe; crawler labels and internal referrers are unverified. A probe answered with 2xx belongs in the review queue, not a confirmed-exploit count.
+
+Bottom rail: newest record age, record counts, verified-address share, database size, and last refresh. Startup backfill requires a writable database; take a verified database/key backup before deploying. Older binaries ignore the additive columns, so application rollback can retain the current database and subsequent records.
 
 The original Python implementation remains in the repository as a parity reference and test baseline. Its `views/dashboard.py` is the previous visual reference and is no longer what the frontend renders.
 

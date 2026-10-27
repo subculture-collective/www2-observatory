@@ -11,7 +11,16 @@ export interface Column<T> {
 }
 
 /** Sortable, dense data table. Click a header to sort; click again to flip. */
-export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDesc = true, max, empty = "no rows" }: {
+export function Table<T>({
+  rows,
+  columns,
+  rowKey,
+  onRow,
+  initialSort,
+  initialDesc = true,
+  max,
+  empty = "no rows",
+}: {
   rows: T[];
   columns: Column<T>[];
   rowKey: (row: T) => string;
@@ -23,6 +32,7 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
 }) {
   const [sortKey, setSortKey] = useState(initialSort ?? "");
   const [desc, setDesc] = useState(initialDesc);
+  const [visible, setVisible] = useState(max ?? Infinity);
   const sorted = useMemo(() => {
     const col = columns.find((c) => c.key === sortKey);
     if (!col?.sort) return rows;
@@ -30,11 +40,14 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
     return [...rows].sort((a, b) => {
       const x = s(a);
       const y = s(b);
-      const r = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y));
+      const r =
+        typeof x === "number" && typeof y === "number"
+          ? x - y
+          : String(x).localeCompare(String(y));
       return desc ? -r : r;
     });
   }, [rows, columns, sortKey, desc]);
-  const shown = max ? sorted.slice(0, max) : sorted;
+  const shown = sorted.slice(0, visible);
   if (!rows.length) return <p className="empty">{empty}</p>;
   return (
     <div className="table-wrap">
@@ -46,7 +59,13 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
                 key={c.key}
                 style={{ width: c.width, textAlign: c.align ?? "left" }}
                 title={c.title}
-                aria-sort={sortKey === c.key ? (desc ? "descending" : "ascending") : "none"}
+                aria-sort={
+                  sortKey === c.key
+                    ? desc
+                      ? "descending"
+                      : "ascending"
+                    : "none"
+                }
               >
                 {c.sort ? (
                   <button
@@ -60,7 +79,9 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
                     }}
                   >
                     {c.label}
-                    {sortKey === c.key && <span aria-hidden="true">{desc ? " ▾" : " ▴"}</span>}
+                    {sortKey === c.key && (
+                      <span aria-hidden="true">{desc ? " ▾" : " ▴"}</span>
+                    )}
                   </button>
                 ) : (
                   c.label
@@ -71,7 +92,25 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
         </thead>
         <tbody>
           {shown.map((row) => (
-            <tr key={rowKey(row)} className={onRow ? "clickable" : ""} onClick={onRow ? () => onRow(row) : undefined} tabIndex={onRow ? 0 : undefined} onKeyDown={onRow ? (e) => (e.key === "Enter" || e.key === " ") && onRow(row) : undefined}>
+            <tr
+              key={rowKey(row)}
+              className={onRow ? "clickable" : ""}
+              onClick={onRow ? () => onRow(row) : undefined}
+              tabIndex={onRow ? 0 : undefined}
+              onKeyDown={
+                onRow
+                  ? (e) => {
+                      if (
+                        e.target === e.currentTarget &&
+                        (e.key === "Enter" || e.key === " ")
+                      ) {
+                        e.preventDefault();
+                        onRow(row);
+                      }
+                    }
+                  : undefined
+              }
+            >
               {columns.map((c) => (
                 <td key={c.key} style={{ textAlign: c.align ?? "left" }}>
                   {c.render(row)}
@@ -81,13 +120,37 @@ export function Table<T>({ rows, columns, rowKey, onRow, initialSort, initialDes
           ))}
         </tbody>
       </table>
-      {max && rows.length > max && <p className="table-more">{rows.length - max} more rows not shown</p>}
+      {max && rows.length > max && (
+        <div className="table-more">
+          showing {Math.min(visible, rows.length)} of {rows.length} loaded rows{" "}
+          <div className="seg">
+            {visible < rows.length && (
+              <button onClick={() => setVisible((v) => v + max)}>
+                show {Math.min(max, rows.length - visible)} more
+              </button>
+            )}
+            {visible > max && (
+              <button onClick={() => setVisible(max)}>collapse</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /** Small inline meter used inside table cells. */
-export function Meter({ value, max, color = "var(--accent)", label }: { value: number; max: number; color?: string; label?: string }) {
+export function Meter({
+  value,
+  max,
+  color = "var(--accent)",
+  label,
+}: {
+  value: number;
+  max: number;
+  color?: string;
+  label?: string;
+}) {
   const w = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <span className="meter" title={label}>
@@ -98,11 +161,31 @@ export function Meter({ value, max, color = "var(--accent)", label }: { value: n
 }
 
 /** Class mix as a tiny stacked bar. */
-export function ClassBar({ engagement, scanner, operator, other }: { engagement: number; scanner: number; operator: number; other: number }) {
+export function ClassBar({
+  engagement,
+  scanner,
+  operator,
+  other,
+}: {
+  engagement: number;
+  scanner: number;
+  operator: number;
+  other: number;
+}) {
   const total = engagement + scanner + operator + other || 1;
-  const seg = (v: number, c: string, t: string) => (v > 0 ? <i key={t} style={{ width: `${(v / total) * 100}%`, background: c }} title={`${t}: ${v}`} /> : null);
+  const seg = (v: number, c: string, t: string) =>
+    v > 0 ? (
+      <i
+        key={t}
+        style={{ width: `${(v / total) * 100}%`, background: c }}
+        title={`${t}: ${v}`}
+      />
+    ) : null;
   return (
-    <span className="classbar" aria-label={`resource ${engagement}, scan-shaped ${scanner}, operator ${operator}, other ${other}`}>
+    <span
+      className="classbar"
+      aria-label={`resource ${engagement}, scan-shaped ${scanner}, operator ${operator}, other ${other}`}
+    >
       {seg(engagement, "var(--cyan)", "resource")}
       {seg(scanner, "var(--orange)", "scan-shaped")}
       {seg(operator, "var(--magenta)", "operator")}
@@ -111,7 +194,13 @@ export function ClassBar({ engagement, scanner, operator, other }: { engagement:
   );
 }
 
-export function Tag({ children, tone = "" }: { children: ReactNode; tone?: string }) {
+export function Tag({
+  children,
+  tone = "",
+}: {
+  children: ReactNode;
+  tone?: string;
+}) {
   return <span className={`tag ${tone}`}>{children}</span>;
 }
 
@@ -120,7 +209,13 @@ export function StatusTag({ status }: { status: number }) {
 }
 
 export function ClassTag({ cls }: { cls: string }) {
-  const label: Record<string, string> = { engagement: "RES", scanner: "SCAN", operator: "OP", other: "OTHER", unclassified: "—" };
+  const label: Record<string, string> = {
+    engagement: "RES",
+    scanner: "SCAN",
+    operator: "OP",
+    other: "OTHER",
+    unclassified: "—",
+  };
   return <Tag tone={`c-${cls}`}>{label[cls] ?? cls}</Tag>;
 }
 
