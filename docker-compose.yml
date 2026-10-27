@@ -1,0 +1,43 @@
+services:
+  observatory:
+    container_name: www2-observatory
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./state:/data
+      - ./backups:/backups
+      # This directory must contain only www2.onnwee.me access logs.
+      - ${CADDY_LOG_DIR:-/var/log/caddy/www2}:/logs:ro
+      # Relay ledgers (guestbook, wall, notes, files, events) pulled from
+      # Dozor by www2-relay-ledger-sync.timer. Read-only; set OBS_RELAY_DIR=/relay.
+      - ./relay-ledger:/relay:ro
+    ports:
+      # Intentionally private to the host. Reach it over SSH tunnel/VPN if needed.
+      - "127.0.0.1:9099:9099"
+    read_only: true
+    group_add:
+      # Caddy creates private 0640 logs owned by the host's root group.
+      - "0"
+    networks:
+      - projects
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/observatory",
+          "--bind",
+          "127.0.0.1",
+          "--port",
+          "9099",
+          "healthcheck",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  projects:
+    external: true

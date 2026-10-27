@@ -1,0 +1,11 @@
+[project]
+name = "www2-observatory"
+version = "0.1.0"
+description = "Passive, server-side observatory for a small public web service."
+requires-python = ">=3.11"
+
+[project.scripts]
+www2-observatory = "observatory.main:main"
+
+[tool.unittest]
+start-directory = "tests"

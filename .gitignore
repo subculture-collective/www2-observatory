@@ -1,0 +1,14 @@
+__pycache__/
+.mypy_cache/
+*.pyc
+.env
+state/
+backups/
+*.sqlite3
+*.db
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+.playwright-cli/
+output/

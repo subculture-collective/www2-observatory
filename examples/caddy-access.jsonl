@@ -1,0 +1,4 @@
+{"ts":1789960000.1,"request":{"host":"www2.onnwee.me","remote_ip":"203.0.113.10","method":"GET","uri":"/","headers":{"User-Agent":["Mozilla/5.0 Chrome/152 Safari/537.36"],"Accept":["text/html"]}},"status":200,"size":4912}
+{"ts":1789960011.2,"request":{"host":"www2.onnwee.me","remote_ip":"198.51.100.20","method":"GET","uri":"/robots.txt","headers":{"User-Agent":["curl/8.6"],"Accept":["text/plain"]}},"status":200,"size":245}
+{"ts":1789960013.3,"request":{"host":"www2.onnwee.me","remote_ip":"198.51.100.20","method":"OPTIONS","uri":"/notes/test","headers":{"User-Agent":["curl/8.6"],"Accept":["application/json"]}},"status":204,"size":0}
+{"ts":1789960015.4,"request":{"host":"www2.onnwee.me","remote_ip":"198.51.100.20","method":"GET","uri":"/notes/?format=json","headers":{"User-Agent":["curl/8.6"],"Accept":["application/json"]}},"status":200,"size":1203}

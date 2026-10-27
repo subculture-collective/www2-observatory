@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "timezone": "America/Chicago",
+  "changes": [
+    {
+      "id": "caddy-client-v2",
+      "date": "2026-09-22",
+      "scope": "private measurement",
+      "description": "Use verified Caddy client_ip, preserve original pseudonyms, and rebuild matched historical sessions. Operator markers are self-declared; historical unmarked probes remain unknown."
+    },
+    {
+      "id": "research-funnel-v1",
+      "date": "2026-09-22",
+      "scope": "private measurement",
+      "description": "Separate scan-shaped, operator-marked, resource, and other traffic. Ordered fingerprint milestones require successful requests and delayed durable-object retrieval. No autonomous-agent identity claims."
+    },
+    {
+      "id": "reference-shelf-v1",
+      "date": "2026-09-22",
+      "scope": "public intervention",
+      "description": "Webmaster-authored reference resources linked from the existing homepage, text index, and sitemap. No seeded users, messages, or conversation conventions.",
+      "resources": [
+        {
+          "path": "/reference/backup-checklist.txt",
+          "sha256": "a011052020507ab3133ed7029734cc81f7a3bfa73c9801fbfec267db97fe50cd"
+        },
+        {
+          "path": "/reference/changes.txt",
+          "sha256": "28387fb56bb98f837ac1e146ed2286be1f2a724ca761251794ab3cc6712ba362"
+        },
+        {
+          "path": "/reference/plain-text.txt",
+          "sha256": "0b1fd5cee0b1a02b5e0ec45b7599f5be5b54775046c0ac41c45d9a6da7a721a8"
+        },
+        {
+          "path": "/reference/text-formats.txt",
+          "sha256": "c8edfdb194f8e7edd8e3b8c3037ff3225a05c50388e0de98d794ef3d2fe00c99"
+        }
+      ]
+    },
+    {
+      "id": "http-relay-v1",
+      "date": "2026-09-23",
+      "scope": "public intervention",
+      "description": "Authored HTTP relay implementation article and search discovery setup. No participant messages seeded.",
+      "resources": [
+        {
+          "path": "/reference/http-relay.txt",
+          "sha256": "007079314cbea3a7cdd9568b6a6ed0f89513a78a2afbf66053cab4581b4f165f"
+        }
+      ]
+    },
+    {
+      "id": "search-submissions-v1",
+      "date": "2026-09-23",
+      "scope": "public distribution intervention",
+      "description": "Google URL-prefix ownership verified by homepage tag. Sitemap processed successfully with 14 discovered URLs. IndexNow root-key submission returned HTTP 202 at 04:08:54 UTC after a retained HTTP 422 subdirectory-scope failure. Webmaster verification and submission-triggered traffic is operator-induced and can lack request markers; it is not evidence of ambient discovery. Bing ownership verification in progress."
+    },
+    {
+      "id": "geocities-style-v1",
+      "date": "2026-09-23",
+      "scope": "public intervention",
+      "description": "Visual restyle of the HTML surface deployed at about 23:27 UTC: self-hosted animated SVG decorations, starfield, marquees, 88x31 buttons, and a webring box. Existing page copy, links, and text/JSON representations unchanged; added decorative homepage and footer lines. No JavaScript, no seeded messages. Prior image tagged deadweb-relay:before-geocities-20260923 on Dozor.",
+      "resources": [
+        {
+          "path": "/static/style.css",
+          "sha256": "c046c72d610892f960fa75c86af079a2720042dd63964add8da4edbd3d6f997c"
+        },
+        {
+          "path": "web/templates/base.html (source)",
+          "sha256": "bc68acbc39f292dc02c380f70860a4ddfc7a6c4002289cdc5f360aa4c35e60db"
+        },
+        {
+          "path": "web/templates/home.html (source)",
+          "sha256": "1fa2c7fadd85013ba3345968d8415cef6ac20172799ae55f53404694fc3efaeb"
+        }
+      ]
+    },
+    {
+      "id": "web-revival-v1",
+      "date": "2026-09-25",
+      "scope": "public intervention",
+      "description": "Web-revival restyle deployed to Dozor 2026-09-25 19:55Z (public verification delayed by an Almaz docker outage). Three-column GeoCities-style collage homepage, tiled SVG backgrounds, new 88x31 buttons and a PNG site button. New authored pages: what's new (/whatsnew.html, /recent.txt), /now.html, curated links (/links.html, /links.txt, /blogroll.opml), /webring/ with Hotline Webring hooks, /buttons.html, /sitemap.html, /sitemap.txt, stateless /cgi-bin/ utilities, /uptime.txt, and /chat/ (the wall as a meta-refresh chat room). Guestbook accepts optional homepage and mood fields; notes gained folder listings and If-None-Match; wall accepts JSON. No JavaScript, no seeded messages, no AI-addressed text. Record: docs/WEB-REVIVAL-2026-09-25.md. Writes by link: GET /wall/?post=, /guestbook/?body=, /notes/<path>?set=|append= store once per identical request; robots.txt disallows the parameters; event method distinguishes GET writes.",
+      "resources": [
+        {
+          "path": "/static/style.css",
+          "sha256": "53c6b433c9865f7e6e205d408cca1ca19286f2946f5515711679945a3d3415fb"
+        },
+        {
+          "path": "/static/button.png",
+          "sha256": "32a88849ed7b30c411900264a9e13a3e48e019f9133fa94dd908e13c877035f1"
+        },
+        {
+          "path": "/reference/changes.txt",
+          "sha256": "879e6534a328de57a6916254efe6e1a9bff98f5810bdc0227209c4fad36353fe"
+        },
+        {
+          "path": "web/templates/base.html (source)",
+          "sha256": "f378aa6ef5898566dc47c108696540a2768bf2c26d27b410fe6bff91847eb6c1"
+        },
+        {
+          "path": "web/templates/home.html (source)",
+          "sha256": "55bbee5bee3c277df90438b2f175196abe2ad263a3a9a36564b9745cdf0b676a"
+        },
+        {
+          "path": "cmd/relay/pages.go (source)",
+          "sha256": "21ca24f4ed9aa0ca917045700406005d0b6cb52fda68d8448f81b577bd4dea27"
+        },
+        {
+          "path": "cmd/relay/main.go (source)",
+          "sha256": "01dec4e1ba35fa4114d85671a573968b18bdbe7c0237631d4e8a84e836f40517"
+        }
+      ]
+    },
+    {
+      "id": "observatory-v2",
+      "date": "2026-09-25",
+      "scope": "private measurement",
+      "description": "Observatory redesigned as pages (overview, traffic, funnel, fingerprints, writes, events, interventions, system, glossary) with per-view descriptions. New aggregations: per-fingerprint listing and detail, written objects with reads and cross-source reads, representations, hour x weekday heatmap, entrances, ingest state. Writes by link (GET with post=, body=, set=, append=) are now recognised: new link_write column, counted as HTTP-confirmed writes (upper bound), object keys for notes and guestbook. Resource list extended to the new relay pages. Dashboard link to the public site removed. Relay ledgers (guestbook, wall, notes, files, events) are now synced from Dozor every minute and ingested as relay events with an event_key. No public change; built, deployed to Almaz 2026-09-25 20:02Z after the docker daemon there recovered from an unrelated upgrade restart."
+    },
+    {
+      "id": "relay-writes-restored",
+      "date": "2026-09-25",
+      "scope": "public intervention",
+      "description": "Fixed data directory ownership on Dozor (chown 1000:1000). Since the 2026-09-21 deployment the relay container could not write its ledgers or request log, so every public write returned 500 and no relay events were recorded; guestbook, wall, note, and file writes work from 19:55Z. Earlier zero write counts partly reflect this defect, not only absence of writers. Three operator-marked verification writes were made (two note versions at /notes/webmaster/deploy-check, one wall post). Record: docs/DEPLOYMENT-2026-09-25.md."
+    }
+  ]
+}

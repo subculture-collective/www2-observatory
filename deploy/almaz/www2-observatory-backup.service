@@ -1,0 +1,8 @@
+[Unit]
+Description=Create a verified www2 Observatory snapshot
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker compose -f /opt/server/projects/www2-observatory/docker-compose.yml exec -T observatory /app/observatory backup --state /data --output /backups --keep 14

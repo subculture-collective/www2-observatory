@@ -1,0 +1,16 @@
+http://auth.onnwee.me {
+    reverse_proxy authelia:9091
+}
+
+http://observatory.onnwee.me {
+    import authelia
+    reverse_proxy www2-observatory:9099
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        X-Robots-Tag "noindex, nofollow, noarchive"
+        -Server
+    }
+}

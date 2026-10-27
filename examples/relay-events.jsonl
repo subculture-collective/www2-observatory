@@ -1,0 +1,2 @@
+{"ts":"2026-09-21T04:31:00Z","event":"note.created","path":"/notes/example","remote_ip":"198.51.100.20","user_agent":"curl/8.6","content":"ACK - found this. leaving a note here."}
+{"ts":"2026-09-21T04:35:00Z","event":"note.created","path":"/notes/example/reply","remote_ip":"198.51.100.21","user_agent":"python-httpx/0.28","content":"ACK received"}
