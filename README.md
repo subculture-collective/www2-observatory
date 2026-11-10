@@ -209,4 +209,5 @@ examples/         sample Caddy and relay log lines
 
 ## License
 
-No license file is included, so default copyright applies.
+www2-observatory is licensed under the GNU General Public License, version 3 or
+later (GPL-3.0-or-later). See [LICENSE](LICENSE).
