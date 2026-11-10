@@ -1,211 +1,212 @@
 # www2-observatory
 
-A private, passive observatory exclusively for `www2.onnwee.me`.
+A private, passive observatory for one small website,
+[Deadweb Relay](https://github.com/subculture-collective/deadweb-relay) at
+`www2.onnwee.me`. It reads the server's existing Caddy access logs, and
+optionally the relay's own event logs, and turns them into a dashboard of who
+visits, how they find the site, what they probe and what they write.
 
-It watches **existing server-side logs**. It does not add anything to the public page and does not need a route on the monitored domain.
-
-## What it records
-
-From ordinary Caddy JSON access logs:
-
-- timestamp
-- HTTP method, path, query, status, response size/type
-- User-Agent and Accept header
-- sanitized referrer
-- pseudonymous source/client IDs
-- reconstructed sessions and navigation trails
-- machine-friendly representation discovery
-- `OPTIONS` / `HEAD` / write-method probing
-- referrer/discovery channels
-- a transparent automation-likelihood score
-
-Optional application event logs can add:
-
-- public note/guestbook/wall write events
-- scrubbed public content
-- path/content hashes
-- repeated token / convention candidates
-
-Raw IP addresses are **not persisted** in the observatory database.
-
-## Why this is invisible to the public site
-
-The normal request path remains:
+It adds nothing to the public site. There is no tracking pixel, script, cookie,
+extra request or public dashboard route; the observatory never receives a
+request from a visitor:
 
 ```text
 visitor -> Caddy -> www2 application
             |
-            +--> ordinary JSON access log
-                         |
-                         +--> observatory (read-only)
+            +--> JSON access log --> observatory (read-only)
 ```
 
-The observatory never has to receive a request from a visitor. There is no tracking pixel, injected script, analytics cookie, extra API request, or public dashboard route.
+It is a personal research tool, built for that one site. The dashboard is meant
+to stay private.
 
-## Current implementation
+## What it records
 
-The production runtime uses a **Go API/runtime** plus a **Vite TypeScript React** frontend. The Go binary handles log ingestion, SQLite analytics, `/api/*`, `/healthz`, NDJSON export, and serving the compiled React app from `frontend/dist`. Client-side routes fall back to `index.html`.
+From Caddy JSON access logs:
 
-The interface uses the Evangelion-rice palette: monospace, small-caps labels, thin bordered panels, acid green, purple, cyan, and optional scanlines. The overview is a deliberately excessive command room, with a rotating wireframe instrument, fingerprint radar, and a traffic replay deck. Counts come from recorded requests; decorative geometry carries no geographic or threat-severity meaning. Chart containers stay flat so transforms cannot hide responsive charts.
+- timestamp, method, path, query, status, response size and type
+- User-Agent and Accept header, and a cleaned-up referrer
+- pseudonymous source and client IDs (keyed HMAC; raw IP addresses are not
+  stored)
+- reconstructed sessions and navigation trails
+- requests for machine-readable versions of pages
+- `OPTIONS`, `HEAD` and write-method probing
+- referrer and discovery channels
+- a transparent automation-likelihood score
 
-Probe charts use fixed semantic colors, so sorting, filtering, and changing the time window do not reassign them. Broad request types have distinct hues; individual probe families use coral (traversal), pink (injection), amber (sensitive files), blue (WordPress), lime (PHP/CGI), violet (framework internals), cyan (React component probes), and mint (admin/device discovery). These colors identify patterns, not severity or exploit success. Text labels and counts accompany the colors. The live key is at `/glossary#probe-colors`; palette definitions live in `frontend/src/lib/diagnostics.ts`. The probe / response timeline continues to show all probes as one aggregate series.
+From the relay's optional event logs:
 
-Every panel has a **?** control that opens a description with five parts: what the view shows, what it determines, why it is recorded, caveats, and the API source. The same text is collected on the glossary page and lives in `frontend/src/lib/descriptions.ts`.
+- public note, guestbook and wall writes
+- cleaned public content, path and content hashes
+- repeated tokens and conventions that spread between clients
 
-Pages:
+## Dashboard
+
+A Go service ingests the logs into SQLite and serves an API and a React
+dashboard.
 
 | Route | Contents |
 | --- | --- |
-| `/` overview | Headline numbers with previous-window deltas and sparklines; traffic over time stacked by class, method, representation, outcome, automation, or writes, with intervention markers; fingerprint radar; ordered funnel; outcome and representation rings; newest events; entrances |
-| `/traffic` | Timeline; hour × weekday heatmap; exact status counts; every path with class, method, write, and error splits; every user agent; referring hosts |
-| `/diagnostics` | Probe families, request-shape counts, response timeline, 404 paths, possible broken links, source concentration, user-agent churn, and a review queue for 2xx probes, server errors, and missing resources/assets |
-| `/funnel` | Eligible fingerprints, writes, returns, cross-source reads; the five ordered stages with definitions; class and address-basis totals; milestone evidence; measurement rules |
-| `/clients` | One row per fingerprint, filterable (resource, wrote, verified, scan-shaped, operator, other), sortable; radar |
-| `/clients/<id>` | One fingerprint: aggregate, stages reached with the evidence event, sessions with full trails, objects written, agents, raw events |
-| `/writes` | Writes over time; written objects with readers and cross-source reads; writes by link; relay write events and repeated tokens when the relay log is mounted |
-| `/events` | Raw event log with class, method, automation, status, link-write, fingerprint, and text filters; row drawer; NDJSON export |
-| `/interventions` | The dated ledger with scope tags and resource hashes |
-| `/system` | Newest record age, record counts, database size, whole-database class and address-basis totals, automation signals, ingest offsets, reconciliation runs |
-| `/glossary` | All view descriptions in one place |
+| `/` | Headline numbers with changes from the previous window, traffic over time, a fingerprint radar, the funnel, newest events and entry pages |
+| `/traffic` | Timeline, hour-by-weekday heatmap, status counts, every path, user agent and referring host |
+| `/diagnostics` | Probe families, request shapes, 404 paths, possible broken links, source concentration and a review queue |
+| `/funnel` | The five ordered stages, with definitions and evidence |
+| `/clients`, `/clients/<id>` | One row per fingerprint, and a detail page with sessions, trails, writes and raw events |
+| `/writes` | Writes over time, written objects and who read them, relay write events |
+| `/events` | Filterable raw event log with NDJSON export |
+| `/interventions` | Dated ledger of changes made to the site |
+| `/system` | Record age and counts, database size, ingest offsets |
+| `/glossary` | What every view shows, what it can and cannot tell you, and where its data comes from |
 
-Top rail: time window (1h to 90d), refresh interval, scanlines, motion status, UTC clock, and browser-local time with UTC offset. Defaults are **30 days and 30-second refresh**. The display-version migration applies those defaults once to existing browsers, then preserves new window/refresh choices in `localStorage`. The depth toggle is removed. Motion is on unless the system requests Reduce Motion; changes to that preference apply immediately. Reduced motion freezes the model and radar and disables replay playback while retaining manual scrubbing and stepping.
+Every panel has a **?** control with the same description. The time window runs
+from 1 hour to 90 days (default 30 days). Probe charts use fixed colors per
+probe family; the key is at `/glossary#probe-colors`. Motion follows the
+system's reduce-motion setting.
 
-The replay deck starts on the busiest UTC bucket and opens the matching events with an inclusive `since` and exclusive `until` timestamp. The event table and NDJSON export share the selected time window, diagnostic, probe family, exact path, method, status, research class, automation, source/fingerprint/session, search, and link-write filters. Table limits describe loaded rows; expandable tables do not silently discard rows after the first display page.
-
-Request diagnostics use `request-shape-v1`, independently of the stored research class. On startup the service backfills additive `request_kind`, `probe_family`, `diagnostic_reason`, and `diagnostic_revision` fields from retained request metadata. It preserves IDs, pseudonyms, research classes, write facts, ingest offsets, and raw request evidence. New ingestion fills the same fields immediately. Public message values are excluded from query-payload matching. A 404 alone remains insufficient to label a request a probe; crawler labels and internal referrers are unverified. A probe answered with 2xx belongs in the review queue, not a confirmed-exploit count.
-
-Bottom rail: newest record age, record counts, verified-address share, database size, and last refresh. Startup backfill requires a writable database; take a verified database/key backup before deploying. Older binaries ignore the additive columns, so application rollback can retain the current database and subsequent records.
-
-The original Python implementation remains in the repository as a parity reference and test baseline. Its `views/dashboard.py` is the previous visual reference and is no longer what the frontend renders.
-
-See [measurement definitions and operator practice](docs/MEASUREMENT.md) before interpreting fingerprints as participants.
+Read [docs/MEASUREMENT.md](docs/MEASUREMENT.md) before treating fingerprints as
+participants.
 
 ## Quick start
 
-### 1. Configure Caddy JSON logging
+You need Go 1.24 or newer and Node.js with npm.
 
-See [`docs/CADDY.md`](docs/CADDY.md).
-
-### 2. Configure the observatory
+Try it with synthetic data:
 
 ```sh
-cp .env.example .env
-mkdir -p state
-```
-
-Create the dedicated host directory configured by `CADDY_LOG_DIR` and adjust that narrow mount if needed. On Almaz it is `/opt/server/management/data/caddy/logs/www2`. Do not mount the shared Caddy log directory.
-
-### 3. Run
-
-```sh
-docker compose up -d --build
-```
-
-The dashboard is available only on the server's loopback interface:
-
-```text
-http://127.0.0.1:9099
-```
-
-Use an SSH tunnel to view it from another machine:
-
-```sh
-ssh -L 9099:127.0.0.1:9099 your-server
-```
-
-Then browse to `http://127.0.0.1:9099` locally.
-
-## Run without Docker
-
-Go 1.24+ and Node.js/npm are required for the new runtime.
-
-```sh
-npm install --prefix frontend
+npm ci --prefix frontend
 npm run build --prefix frontend
+mkdir -p /tmp/obsdev
+python3 scripts/gen_demo_log.py /tmp/obsdev/access.jsonl --days 14
+export OBS_CADDY_LOG=/tmp/obsdev/access.jsonl OBS_DB=/tmp/obsdev/obs.sqlite3 \
+  OBS_KEY_FILE=/tmp/obsdev/key OBS_TRUST_CADDY_CLIENT_IP=true
 go run ./cmd/observatory ingest-once
 go run ./cmd/observatory run
 ```
 
-For local development, run the Go API on `127.0.0.1:9099` and the Vite dev server separately:
+The dashboard is at <http://127.0.0.1:9099>. For frontend work, run
+`npm run dev --prefix frontend` next to the Go service; Vite proxies `/api/*`
+and `/healthz` to it. Never ingest demo data into a real database.
+
+Tests and checks:
 
 ```sh
-go run ./cmd/observatory run
-npm run dev --prefix frontend
+go test -race ./...
+go vet ./...
+python3 -m unittest discover -s tests -v   # Python reference implementation
+npm run build --prefix frontend            # typecheck and build
 ```
 
-The Vite dev server proxies `/api/*` and `/healthz` to the Go API.
+The `observatory/` directory holds the original Python implementation, kept as a
+reference and test baseline. It needs only Python 3.11 and the standard library
+(`python3 -m observatory.main ingest-once`, then `run`).
 
-### Legacy Python reference
+## Configuration
 
-Python 3.11+ and the standard library are sufficient.
+Copy `.env.example` to `.env`.
+
+| Variable | Purpose |
+| --- | --- |
+| `CADDY_LOG_DIR` | Host directory holding only this site's Caddy logs; Compose mounts it read-only |
+| `OBS_CADDY_LOG` | Path of the access log inside the container (default `/logs/access.jsonl`) |
+| `OBS_ALLOWED_HOSTS` | Hostnames to accept from the log (default `www2.onnwee.me`) |
+| `OBS_TRUST_CADDY_CLIENT_IP` | Use Caddy's `client_ip`; turn on only when Caddy trusts the right proxy |
+| `OBS_RELAY_LOG`, `OBS_RELAY_DIR` | Optional relay event log, or a directory of relay ledgers |
+| `OBS_DB`, `OBS_KEY_FILE` | SQLite database and the pseudonym key |
+| `OBS_BIND`, `OBS_PORT` | Dashboard address (default `127.0.0.1:9099`) |
+| `OBS_TOKEN` | Optional bearer token for `/api/*` and the dashboard |
+| `OBS_SESSION_MINUTES` | Gap that ends a session |
+| `OBS_CONTENT_MAX` | Maximum public write content kept from relay logs |
+| `OBS_STATIC_DIR` | Built frontend directory (default `frontend/dist`) |
+
+[docs/CADDY.md](docs/CADDY.md) shows the Caddy logging setup.
+
+## Deploy
+
+The `Dockerfile` builds the frontend and a static Go binary into a small Alpine
+image that runs as an unprivileged user.
 
 ```sh
-export OBS_CADDY_LOG="$PWD/examples/caddy-access.jsonl"
-export OBS_RELAY_LOG="$PWD/examples/relay-events.jsonl"
-export OBS_DB="$PWD/state/observatory.sqlite3"
-export OBS_KEY_FILE="$PWD/state/pseudonym.key"
-python3 -m observatory.main ingest-once
-python3 -m observatory.main run
+cp .env.example .env
+mkdir -p state
+docker compose up -d --build
 ```
 
-No third-party Python packages are required.
+Compose mounts `./state` for the database and key, `./backups`, the Caddy log
+directory and `./relay-ledger` read-only, and publishes the dashboard on
+`127.0.0.1:9099` only. It also joins an external Docker network named
+`projects`; create it with `docker network create projects` or remove that block.
+Reach the dashboard over an SSH tunnel (`ssh -L 9099:127.0.0.1:9099 your-server`)
+or put real authentication in front of it.
 
-## Retention and backup
-
-Observatory never prunes parsed records. Caddy keeps the bounded raw-log window described in [`docs/CADDY.md`](docs/CADDY.md). Back up `state/observatory.sqlite3` using SQLite's online backup command rather than copying only the live database file, and preserve `state/pseudonym.key` with every backup. Verify restored databases with `PRAGMA integrity_check`.
-
-After the service has created its state, run `docker compose exec observatory /app/observatory backup --state /data --output /backups --keep 14`. It writes a timestamped, integrity-checked database snapshot and matching key under the host's `backups/` directory. The Almaz timer runs this before the nightly restic job, which keeps longer version history.
-
-## Local development with synthetic data
-
-`scripts/gen_demo_log.py` writes a fictional Caddy JSON log shaped like the real mix (browsers with referrers, crawlers, scan-shaped probes, operator probes, fetch-only clients that walk the funnel and write by PUT or by link). Ingest it into a throwaway database:
+The observatory never prunes parsed records. Back up with:
 
 ```sh
-python3 scripts/gen_demo_log.py /tmp/obsdev/access.jsonl --days 14
-OBS_CADDY_LOG=/tmp/obsdev/access.jsonl OBS_DB=/tmp/obsdev/obs.sqlite3 OBS_KEY_FILE=/tmp/obsdev/key \
-  OBS_TRUST_CADDY_CLIENT_IP=true go run ./cmd/observatory ingest-once
-OBS_CADDY_LOG=/tmp/obsdev/access.jsonl OBS_DB=/tmp/obsdev/obs.sqlite3 OBS_KEY_FILE=/tmp/obsdev/key \
-  OBS_TRUST_CADDY_CLIENT_IP=true OBS_STATIC_DIR=frontend/dist go run ./cmd/observatory run
+docker compose exec observatory /app/observatory backup --state /data --output /backups --keep 14
 ```
 
-Never ingest that file into the production database.
+That writes a timestamped, integrity-checked snapshot of the database with its
+matching key. Keep the key with every backup; without it, pseudonyms cannot be
+matched to new records.
 
 ## API
 
-All endpoints accept `hours=` (default 24) and, where a list is returned, `limit=`. Times are Unix seconds, UTC.
+All endpoints accept `hours=` (default 24) and, for lists, `limit=`. Times are
+Unix seconds, UTC. If `OBS_TOKEN` is set, send `Authorization: Bearer <token>`.
 
 ```text
-/api/summary          headline counts, class/method/representation/write splits, previous window
-/api/timeline         per hour (or bucket=day) with the same splits; empty buckets omitted
+/api/summary          headline counts and splits, with the previous window
+/api/timeline         per hour (or bucket=day)
 /api/experiment       ordered funnel, evidence, attribution, class totals
-/api/clients          one row per fingerprint; class=engagement|scanner|operator|other|writers|verified; order=requests|writes|automation|first_seen
-/api/client?id=       one fingerprint: summary, sessions, events, user agents, objects, stages
-/api/recent           raw events; method=, level=, status= (exact or 2–5 for a class), class=, client=, link=1, search=
+/api/clients          one row per fingerprint; class= and order= filters
+/api/client?id=       one fingerprint: summary, sessions, events, objects, stages
+/api/recent           raw events; method=, level=, status=, class=, client=, link=1, search=
 /api/event?id=        one raw event
-/api/objects          written objects with reads, readers, cross-source reads
-/api/link-writes      GET requests carrying post=, body=, set=, or append=
-/api/representations  2xx responses by media-type family
+/api/objects          written objects with reads and readers
+/api/link-writes      GET requests carrying post=, body=, set= or append=
+/api/representations  2xx responses by media type
 /api/heatmap          requests by UTC weekday and hour
-/api/entrances        first request of each session by path and referring host
-/api/paths            paths with class, method, write, and error splits
-/api/user-agents      agents with class, representation, and write splits
+/api/entrances        first request of each session
+/api/paths            paths with class, method, write and error splits
+/api/user-agents      user agents with class, representation and write splits
 /api/referrers /api/status /api/methods /api/signals /api/sessions
-/api/writes /api/conventions   relay application events (when the relay log is mounted)
-/api/ingest           record counts, newest record, ingest offsets, reconciliation runs, class and attribution totals
-/api/interventions    the ledger copied from the relay repo's docs/INTERVENTIONS.json
-/api/export.ndjson    newest events as NDJSON (limit ≤ 500; class= and client= filters)
+/api/writes /api/conventions   relay events (when relay logs are mounted)
+/api/ingest           record counts, ingest offsets, reconciliation runs
+/api/interventions    the intervention ledger
+/api/export.ndjson    newest events as NDJSON (limit ≤ 500)
 ```
 
-If `OBS_TOKEN` is set, send:
+## Reading the numbers
+
+The automation score is a heuristic. It says "high automation likelihood", never
+which program or model sent a request. A person using `curl` can look highly
+automated, and an automated client driving a real browser can look ordinary. The
+useful evidence is behavior over time: discovery, return visits, repeated paths
+and identities, shared resources, and conventions passing between distinct
+pseudonymous clients. A 404 alone does not make a request a probe, and a probe
+answered with a 2xx goes to the review queue, not to a count of confirmed
+exploits.
+
+See [docs/DETECTION.md](docs/DETECTION.md) and [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## Project layout
 
 ```text
-Authorization: Bearer <token>
+cmd/observatory   entry point: run, ingest-once, reconcile-access, backup, healthcheck
+internal/         ingestion, parsers, scoring, analytics, API, SQLite, backups
+frontend/         Vite + React + TypeScript dashboard
+observatory/      Python reference implementation
+scripts/          demo log generator and helpers
+tests/            Python reference tests
+examples/         sample Caddy and relay log lines
 ```
 
-## Important interpretation note
+## Contributing
 
-The automation score is a heuristic. It deliberately says things like "high automation likelihood," not "this was Claude" or "this was an AI agent." A person using `curl` can look highly automated, and an autonomous system using Chrome can look completely ordinary.
+- Bugs and feature requests: [GitHub issues](https://github.com/subculture-collective/www2-observatory/issues).
+- Questions and ideas: [GitHub Discussions](https://github.com/subculture-collective/www2-observatory/discussions).
+- Code: open a pull request on GitHub against `main`. CI checks Go formatting,
+  runs the Go tests with the race detector, `go vet` and a production build, runs
+  the Python reference tests, and typechecks and builds the frontend.
 
-The valuable evidence is usually **behavior over time**: discovery, return visits, repeated identity/path usage, coordination through shared resources, and conventions propagating between distinct pseudonymous clients.
+## License
 
-See [`docs/DETECTION.md`](docs/DETECTION.md) and [`docs/PRIVACY.md`](docs/PRIVACY.md).
+No license file is included, so default copyright applies.
